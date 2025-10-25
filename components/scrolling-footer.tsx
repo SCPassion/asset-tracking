@@ -12,7 +12,7 @@ export function ScrollingFooter() {
         {duplicatedProviders.map((provider, index) => (
           <div
             key={`${provider}-${index}`}
-            className="flex-shrink-0 text-gray-300 text-sm font-medium whitespace-nowrap hover:text-purple-400 transition-colors"
+            className="shrink-0 text-gray-300 text-sm font-medium whitespace-nowrap hover:text-purple-400 transition-colors"
           >
             {provider}
           </div>

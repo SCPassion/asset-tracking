@@ -46,9 +46,9 @@ export function PriceDetailModal({
       {/* Modal */}
       <div className="relative w-full max-w-2xl bg-black/90 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl">
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-white/10 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+        <div className="flex items-start justify-between p-6 border-b border-white/10 bg-linear-to-r from-purple-500/10 to-pink-500/10">
           <div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <h2 className="text-2xl font-bold bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               {priceFeed.symbol}
             </h2>
             <p className="text-sm text-gray-300">{priceFeed.name}</p>

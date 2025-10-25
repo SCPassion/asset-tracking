@@ -15,7 +15,7 @@ export default function HomePage() {
 
         <div className="space-y-4">
           <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold mb-6 text-balance">
-            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               Track Any
             </span>
             <br />
@@ -34,17 +34,14 @@ export default function HomePage() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/price-feeds">
-            <Button
-              variant="purple"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-medium transition-colors"
-            >
+            <Button className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-medium transition-colors">
               Get started
               <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
           <Link href="/about">
             <Button
-              variant="white"
+              variant="outline"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-white font-medium transition-colors border border-white/10"
             >
               Learn more

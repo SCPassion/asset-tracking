@@ -36,7 +36,7 @@ export default function PriceFeedsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-12 text-center">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+          <h1 className="text-5xl font-bold bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
             Track Any
           </h1>
           <p className="text-xl text-gray-300 mb-8">
@@ -49,7 +49,7 @@ export default function PriceFeedsPage() {
         </div>
 
         <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden shadow-2xl">
-          <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-6 border-b border-white/10">
+          <div className="bg-linear-to-r from-purple-500/10 to-pink-500/10 p-6 border-b border-white/10">
             <h2 className="text-2xl font-bold text-white mb-2">
               Asset Tracking Dashboard
             </h2>
@@ -82,12 +82,12 @@ export default function PriceFeedsPage() {
                 {mockPriceFeeds.map((feed) => (
                   <TableRow
                     key={feed.id}
-                    className="border-b border-white/5 hover:bg-gradient-to-r hover:from-purple-500/5 hover:to-pink-500/5 transition-all duration-300 cursor-pointer group"
+                    className="border-b border-white/5 hover:bg-linear-to-r hover:from-purple-500/5 hover:to-pink-500/5 transition-all duration-300 cursor-pointer group"
                     onClick={() => setSelectedPriceFeed(feed)}
                   >
                     <TableCell className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
+                        <div className="w-10 h-10 rounded-full bg-linear-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
                           {feed.symbol.charAt(0)}
                         </div>
                         <div>
