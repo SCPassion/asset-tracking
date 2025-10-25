@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Search, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,15 @@ function Navigation() {
         <div className="flex items-center gap-8">
           <Link
             href="/"
-            className="text-2xl font-bold tracking-tight bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
+            className="flex items-center gap-3 text-2xl font-bold tracking-tight bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
           >
+            <Image
+              src="/TrackAny.jpg"
+              alt="Track Any Logo"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
             Track Any
           </Link>
 
