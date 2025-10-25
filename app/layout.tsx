@@ -8,7 +8,7 @@ import { ScrollingFooter } from "@/components/scrolling-footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Track Any - Asset Monitoring Dashboard",
+  title: "Track Any - Asset Monitoring",
   description:
     "Track any asset, anywhere, anytime. Real-time price feeds and market monitoring powered by advanced oracle technology.",
 };
