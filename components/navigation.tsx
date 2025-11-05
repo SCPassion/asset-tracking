@@ -20,19 +20,19 @@ function Navigation() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-md supports-backdrop-filter:bg-black/60">
+    <nav className="sticky top-0 z-50 border-b border-white/10 glass">
       <div className="container mx-auto flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
         <div className="flex items-center gap-4 sm:gap-8">
           <Link
             href="/"
-            className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl lg:text-2xl font-bold tracking-tight bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
+            className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl lg:text-2xl font-bold tracking-tight bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent hover:from-green-300 hover:via-emerald-300 hover:to-green-300 transition-all duration-300"
           >
             <Image
-              src="/TrackAny.jpg"
+              src="/TrackAny.png"
               alt="Track Any Logo"
               width={24}
               height={24}
-              className="rounded-lg sm:w-8 sm:h-8"
+              className="rounded-lg sm:w-8 sm:h-8 ring-2 ring-green-500/20 hover:ring-green-500/40 transition-all"
             />
             <span className="hidden xs:inline">Track Any</span>
             <span className="xs:hidden">Track Any</span>
@@ -44,11 +44,16 @@ function Navigation() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "text-sm font-medium transition-colors hover:text-purple-400",
-                  pathname === link.href ? "text-white" : "text-gray-400"
+                  "text-sm font-medium transition-all duration-300 relative",
+                  pathname === link.href
+                    ? "text-green-300"
+                    : "text-gray-400 hover:text-green-300"
                 )}
               >
                 {link.label}
+                {pathname === link.href && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full" />
+                )}
               </Link>
             ))}
           </div>
@@ -60,13 +65,11 @@ function Navigation() {
             <Input
               type="search"
               placeholder="Search assets..."
-              className="w-48 xl:w-64 pl-9 bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:border-purple-400/50"
+              className="w-48 xl:w-64 pl-9 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-green-400/50 focus:ring-green-400/20 focus:bg-white/8 transition-all duration-300"
             />
           </div>
 
-          <Button className="hidden sm:inline-flex bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium border-0 text-sm">
-            Get Started
-          </Button>
+          <Button className="hidden sm:inline-flex text-sm">Get Started</Button>
 
           {/* Mobile menu button */}
           <Button
@@ -86,15 +89,15 @@ function Navigation() {
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="lg:hidden border-t border-white/10 bg-black/90 backdrop-blur-md">
+        <div className="lg:hidden border-t border-white/10 glass">
           <div className="container mx-auto px-3 sm:px-4 py-4 space-y-4">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "block text-sm font-medium transition-colors hover:text-purple-400 py-2",
-                  pathname === link.href ? "text-white" : "text-gray-400"
+                  "block text-sm font-medium transition-all duration-300 hover:text-green-300 py-2",
+                  pathname === link.href ? "text-green-300" : "text-gray-400"
                 )}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -107,12 +110,10 @@ function Navigation() {
                 <Input
                   type="search"
                   placeholder="Search assets..."
-                  className="w-full pl-9 bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:border-purple-400/50"
+                  className="w-full pl-9 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-green-400/50 focus:ring-green-400/20 focus:bg-white/8 transition-all duration-300"
                 />
               </div>
-              <Button className="w-full bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium border-0">
-                Get Started
-              </Button>
+              <Button className="w-full">Get Started</Button>
             </div>
           </div>
         </div>

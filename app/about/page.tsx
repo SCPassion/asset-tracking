@@ -12,7 +12,7 @@ export default function AboutPage() {
       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="space-y-3 sm:space-y-4 text-center">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
             About Pyth Price Feeds
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground">
@@ -22,7 +22,7 @@ export default function AboutPage() {
 
         {/* Main Content */}
         <div className="space-y-4 sm:space-y-6">
-          <Card className="bg-card/30 border-border/40">
+          <Card className="glass border-white/10">
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="text-lg sm:text-xl">
                 What is Pyth Network?
@@ -43,7 +43,7 @@ export default function AboutPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/30 border-border/40">
+          <Card className="glass border-white/10">
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="text-lg sm:text-xl">
                 Understanding the Data
@@ -82,7 +82,7 @@ export default function AboutPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/30 border-border/40">
+          <Card className="glass border-white/10">
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="text-lg sm:text-xl">
                 Data Providers

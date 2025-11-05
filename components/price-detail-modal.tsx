@@ -44,18 +44,18 @@ export function PriceDetailModal({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl bg-black/90 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl">
+      <div className="relative w-full max-w-2xl glass rounded-2xl border border-white/10 shadow-2xl">
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-white/10 bg-linear-to-r from-purple-500/10 to-pink-500/10">
+        <div className="flex items-start justify-between p-6 border-b border-white/10 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10">
           <div>
-            <h2 className="text-2xl font-bold bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
               {priceFeed.symbol}
             </h2>
             <p className="text-sm text-gray-300">{priceFeed.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+            className="text-gray-400 hover:text-green-300 transition-all duration-300 p-1 rounded-lg hover:bg-green-500/10"
           >
             <svg
               className="w-6 h-6"
@@ -173,8 +173,9 @@ export function PriceDetailModal({
                       x2="100%"
                       y2="0%"
                     >
-                      <stop offset="0%" stopColor="#a855f7" />
-                      <stop offset="100%" stopColor="#ec4899" />
+                      <stop offset="0%" stopColor="#22c55e" />
+                      <stop offset="50%" stopColor="#10b981" />
+                      <stop offset="100%" stopColor="#22c55e" />
                     </linearGradient>
                   </defs>
                 </svg>

@@ -43,7 +43,7 @@ export default function FavoritesPage() {
       <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="space-y-2 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
             Favorites
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
@@ -53,7 +53,7 @@ export default function FavoritesPage() {
 
         {/* Favorites Table */}
         {favoriteFeeds.length > 0 ? (
-          <div className="rounded-lg border border-border/40 bg-card/30 overflow-hidden">
+          <div className="glass rounded-2xl border border-white/10 overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -85,13 +85,13 @@ export default function FavoritesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 sm:h-8 sm:w-8 hover:bg-primary/20"
+                          className="h-6 w-6 sm:h-8 sm:w-8 hover:bg-green-500/20"
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleFavorite(feed.symbol);
                           }}
                         >
-                          <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-primary text-primary" />
+                          <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-green-400 text-green-400" />
                         </Button>
                       </TableCell>
                       <TableCell className="px-2 sm:px-4">
@@ -130,7 +130,7 @@ export default function FavoritesPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-primary/40 text-primary hover:bg-primary/20 bg-transparent text-xs sm:text-sm px-2 sm:px-3"
+                          className="border-green-400/40 text-green-400 hover:bg-green-500/20 bg-transparent text-xs sm:text-sm px-2 sm:px-3"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedPriceFeed(feed);
@@ -146,15 +146,15 @@ export default function FavoritesPage() {
             </div>
           </div>
         ) : (
-          <div className="rounded-lg border border-border/40 bg-card/30 p-12 text-center">
-            <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No favorites yet</h3>
-            <p className="text-muted-foreground mb-4">
+          <div className="glass rounded-2xl border border-white/10 p-12 text-center">
+            <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-white">No favorites yet</h3>
+            <p className="text-gray-400 mb-4">
               Star your favorite price feeds to see them here for quick access
             </p>
             <Button
               variant="outline"
-              className="border-primary/40 text-primary hover:bg-primary/20 bg-transparent"
+              className="border-green-400/40 text-green-400 hover:bg-green-500/20 bg-transparent"
             >
               Browse Price Feeds
             </Button>

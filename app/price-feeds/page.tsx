@@ -36,7 +36,7 @@ export default function PriceFeedsPage() {
     <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 sm:mb-12 text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-3 sm:mb-4">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent mb-3 sm:mb-4">
             Track Any
           </h1>
           <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8">
@@ -48,8 +48,8 @@ export default function PriceFeedsPage() {
           </p>
         </div>
 
-        <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden shadow-2xl">
-          <div className="bg-linear-to-r from-purple-500/10 to-pink-500/10 p-4 sm:p-6 border-b border-white/10">
+        <div className="glass rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+          <div className="bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 p-4 sm:p-6 border-b border-white/10">
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
               Asset Tracking Dashboard
             </h2>
@@ -80,26 +80,26 @@ export default function PriceFeedsPage() {
               </TableHeader>
               <TableBody>
                 {mockPriceFeeds.map((feed) => (
-                  <TableRow
-                    key={feed.id}
-                    className="border-b border-white/5 hover:bg-linear-to-r hover:from-purple-500/5 hover:to-pink-500/5 transition-all duration-300 cursor-pointer group"
-                    onClick={() => setSelectedPriceFeed(feed)}
-                  >
-                    <TableCell className="px-3 sm:px-6 py-3 sm:py-4">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-linear-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                          {feed.symbol.charAt(0)}
+                <TableRow
+                  key={feed.id}
+                  className="border-b border-white/5 hover:bg-gradient-to-r hover:from-green-500/5 hover:via-emerald-500/5 hover:to-green-500/5 transition-all duration-300 cursor-pointer group"
+                  onClick={() => setSelectedPriceFeed(feed)}
+                >
+                  <TableCell className="px-3 sm:px-6 py-3 sm:py-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg shadow-green-500/30">
+                        {feed.symbol.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white group-hover:text-green-300 transition-colors text-sm sm:text-base">
+                          {feed.symbol}
                         </div>
-                        <div>
-                          <div className="font-semibold text-white group-hover:text-purple-300 transition-colors text-sm sm:text-base">
-                            {feed.symbol}
-                          </div>
-                          <div className="text-xs sm:text-sm text-gray-400">
-                            {feed.name}
-                          </div>
+                        <div className="text-xs sm:text-sm text-gray-400">
+                          {feed.name}
                         </div>
                       </div>
-                    </TableCell>
+                    </div>
+                  </TableCell>
                     <TableCell className="px-3 sm:px-6 py-3 sm:py-4 text-right">
                       <div className="font-mono text-white text-sm sm:text-lg font-semibold">
                         $
@@ -136,10 +136,11 @@ export default function PriceFeedsPage() {
                           e.stopPropagation();
                           toggleFavorite(feed.symbol);
                         }}
-                        className="text-gray-400 hover:text-purple-400 transition-colors hover:bg-purple-500/10 p-1 sm:p-2 rounded-lg"
+                        variant="ghost"
+                        className="text-gray-400 hover:text-green-400 transition-all duration-300 hover:bg-green-500/10 p-1 sm:p-2 rounded-lg"
                       >
                         {favorites.has(feed.symbol) ? (
-                          <Star className="w-4 h-4 sm:w-5 sm:h-5 fill-purple-400" />
+                          <Star className="w-4 h-4 sm:w-5 sm:h-5 fill-green-400 text-green-400" />
                         ) : (
                           <Star className="w-4 h-4 sm:w-5 sm:h-5" />
                         )}
