@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Star, TrendingUp, TrendingDown } from "lucide-react";
 import { PriceDetailModal } from "@/components/price-detail-modal";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,63 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { mockPriceFeeds, type PriceFeed } from "@/lib/mock-price-data";
+import type { PriceFeed } from "@/lib/price-feed-types";
+
+interface PriceFeedApiResponse {
+  feeds: PriceFeed[];
+}
+
+function formatPrice(value: number): string {
+  const maxFractionDigits = value >= 1 ? 2 : 6;
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: maxFractionDigits,
+  });
+}
 
 export default function PriceFeedsPage() {
   const [selectedPriceFeed, setSelectedPriceFeed] = useState<PriceFeed | null>(
     null
   );
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [feeds, setFeeds] = useState<PriceFeed[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let canceled = false;
+
+    const loadFeeds = async () => {
+      try {
+        const response = await fetch("/api/price-feeds", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed with status ${response.status}`);
+        }
+
+        const payload = (await response.json()) as PriceFeedApiResponse;
+        if (!canceled) {
+          setFeeds(payload.feeds ?? []);
+          setError(null);
+        }
+      } catch {
+        if (!canceled) {
+          setError("Unable to load Pyth feeds right now.");
+        }
+      } finally {
+        if (!canceled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadFeeds();
+    const interval = setInterval(loadFeeds, 30_000);
+
+    return () => {
+      canceled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   const toggleFavorite = (symbol: string) => {
     setFavorites((prev) => {
@@ -79,39 +129,54 @@ export default function PriceFeedsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockPriceFeeds.map((feed) => (
-                <TableRow
-                  key={feed.id}
-                  className="border-b border-white/5 hover:bg-gradient-to-r hover:from-green-500/5 hover:via-emerald-500/5 hover:to-green-500/5 transition-all duration-300 cursor-pointer group"
-                  onClick={() => setSelectedPriceFeed(feed)}
-                >
-                  <TableCell className="px-3 sm:px-6 py-3 sm:py-4">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg shadow-green-500/30">
-                        {feed.symbol.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-white group-hover:text-green-300 transition-colors text-sm sm:text-base">
-                          {feed.symbol}
+                {isLoading && (
+                  <TableRow className="border-b border-white/5">
+                    <TableCell colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                      Loading live Pyth price feeds...
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!isLoading && error && (
+                  <TableRow className="border-b border-white/5">
+                    <TableCell colSpan={5} className="px-6 py-8 text-center text-red-300">
+                      {error}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!isLoading && !error && feeds.length === 0 && (
+                  <TableRow className="border-b border-white/5">
+                    <TableCell colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                      No feed data available from Pyth right now.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {feeds.map((feed) => (
+                  <TableRow
+                    key={feed.id}
+                    className="border-b border-white/5 hover:bg-gradient-to-r hover:from-green-500/5 hover:via-emerald-500/5 hover:to-green-500/5 transition-all duration-300 cursor-pointer group"
+                    onClick={() => setSelectedPriceFeed(feed)}
+                  >
+                    <TableCell className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg shadow-green-500/30">
+                          {feed.symbol.charAt(0)}
                         </div>
-                        <div className="text-xs sm:text-sm text-gray-400">
-                          {feed.name}
+                        <div>
+                          <div className="font-semibold text-white group-hover:text-green-300 transition-colors text-sm sm:text-base">
+                            {feed.symbol}
+                          </div>
+                          <div className="text-xs sm:text-sm text-gray-400">{feed.name}</div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
+                    </TableCell>
                     <TableCell className="px-3 sm:px-6 py-3 sm:py-4 text-right">
                       <div className="font-mono text-white text-sm sm:text-lg font-semibold">
-                        $
-                        {feed.price.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+                        ${formatPrice(feed.price)}
                       </div>
                     </TableCell>
                     <TableCell className="px-3 sm:px-6 py-3 sm:py-4 text-right hidden sm:table-cell">
                       <div className="font-mono text-gray-300 bg-white/5 rounded-lg px-2 sm:px-3 py-1 inline-block text-xs sm:text-sm">
-                        ±${feed.confidence.toFixed(2)}
+                        ±${formatPrice(feed.confidence)}
                       </div>
                     </TableCell>
                     <TableCell className="px-3 sm:px-6 py-3 sm:py-4 text-right">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Star, TrendingUp, TrendingDown } from "lucide-react";
 import { PriceDetailModal } from "@/components/price-detail-modal";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { mockPriceFeeds, type PriceFeed } from "@/lib/mock-price-data";
+import type { PriceFeed } from "@/lib/price-feed-types";
+
+interface PriceFeedApiResponse {
+  feeds: PriceFeed[];
+}
+
+function formatPrice(value: number): string {
+  const maxFractionDigits = value >= 1 ? 2 : 6;
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: maxFractionDigits,
+  });
+}
 
 export default function FavoritesPage() {
   const [selectedPriceFeed, setSelectedPriceFeed] = useState<PriceFeed | null>(
@@ -21,6 +33,34 @@ export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<Set<string>>(
     new Set(["BTC/USD", "ETH/USD"])
   );
+  const [feeds, setFeeds] = useState<PriceFeed[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let canceled = false;
+
+    const loadFeeds = async () => {
+      try {
+        const response = await fetch("/api/price-feeds", { cache: "no-store" });
+        const payload = (await response.json()) as PriceFeedApiResponse;
+        if (!canceled && response.ok) {
+          setFeeds(payload.feeds ?? []);
+        }
+      } finally {
+        if (!canceled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadFeeds();
+    const interval = setInterval(loadFeeds, 30_000);
+
+    return () => {
+      canceled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   const toggleFavorite = (symbol: string) => {
     setFavorites((prev) => {
@@ -34,14 +74,11 @@ export default function FavoritesPage() {
     });
   };
 
-  const favoriteFeeds = mockPriceFeeds.filter((feed) =>
-    favorites.has(feed.symbol)
-  );
+  const favoriteFeeds = feeds.filter((feed) => favorites.has(feed.symbol));
 
   return (
     <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
       <div className="space-y-4 sm:space-y-6">
-        {/* Header */}
         <div className="space-y-2 text-center sm:text-left">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
             Favorites
@@ -51,7 +88,6 @@ export default function FavoritesPage() {
           </p>
         </div>
 
-        {/* Favorites Table */}
         {favoriteFeeds.length > 0 ? (
           <div className="glass rounded-2xl border border-white/10 overflow-hidden">
             <div className="overflow-x-auto">
@@ -105,17 +141,15 @@ export default function FavoritesPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-mono font-semibold text-sm sm:text-base px-2 sm:px-4">
-                        ${feed.price.toLocaleString()}
+                        ${formatPrice(feed.price)}
                       </TableCell>
                       <TableCell className="text-right font-mono text-muted-foreground text-xs sm:text-sm px-2 sm:px-4 hidden sm:table-cell">
-                        ±${feed.confidence.toFixed(2)}
+                        ±${formatPrice(feed.confidence)}
                       </TableCell>
                       <TableCell className="text-right px-2 sm:px-4">
                         <div
                           className={`inline-flex items-center gap-1 font-semibold text-xs sm:text-sm ${
-                            feed.change24h >= 0
-                              ? "text-green-400"
-                              : "text-red-400"
+                            feed.change24h >= 0 ? "text-green-400" : "text-red-400"
                           }`}
                         >
                           {feed.change24h >= 0 ? (
@@ -148,9 +182,13 @@ export default function FavoritesPage() {
         ) : (
           <div className="glass rounded-2xl border border-white/10 p-12 text-center">
             <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2 text-white">No favorites yet</h3>
+            <h3 className="text-lg font-semibold mb-2 text-white">
+              {isLoading ? "Loading favorites..." : "No favorites yet"}
+            </h3>
             <p className="text-gray-400 mb-4">
-              Star your favorite price feeds to see them here for quick access
+              {isLoading
+                ? "Pulling live feed data from Pyth."
+                : "Star your favorite price feeds to see them here for quick access"}
             </p>
             <Button
               variant="outline"
