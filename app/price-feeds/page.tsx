@@ -137,19 +137,19 @@ const DesktopFeedTable = memo(function DesktopFeedTable({
       <Table>
         <TableHeader>
           <TableRow className="border-b border-slate-300/10 bg-[#060d19]">
-            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-300 uppercase">
+            <TableHead className="px-4 py-2.5 text-sm font-medium tracking-wide text-slate-300 uppercase">
               Asset
             </TableHead>
-            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-300 uppercase text-right">
+            <TableHead className="px-4 py-2.5 text-sm font-medium tracking-wide text-slate-300 uppercase text-right">
               Price
             </TableHead>
-            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-300 uppercase text-right">
+            <TableHead className="px-4 py-2.5 text-sm font-medium tracking-wide text-slate-300 uppercase text-right">
               24h
             </TableHead>
-            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-300 uppercase text-right">
+            <TableHead className="px-4 py-2.5 text-sm font-medium tracking-wide text-slate-300 uppercase text-right">
               Confidence
             </TableHead>
-            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-300 uppercase text-right">
+            <TableHead className="px-4 py-2.5 text-sm font-medium tracking-wide text-slate-300 uppercase text-right">
               Fav
             </TableHead>
           </TableRow>
@@ -167,12 +167,12 @@ const DesktopFeedTable = memo(function DesktopFeedTable({
                   <div className="flex items-center gap-2">
                     <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
                     <div>
-                      <div className="text-sm text-slate-100 font-semibold">{feed.symbol}</div>
-                      <div className="text-[11px] text-slate-300 line-clamp-1">{feed.name}</div>
+                      <div className="text-base leading-snug text-slate-100 font-semibold">{feed.symbol}</div>
+                      <div className="text-sm leading-snug text-slate-300 line-clamp-1">{feed.name}</div>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="px-4 py-2.5 text-right font-mono text-sm text-slate-100">
+                <TableCell className="px-4 py-3 text-right font-mono text-base leading-snug text-slate-100">
                   <span
                     className={`inline-block transition-[filter] duration-300 ${
                       updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
@@ -182,7 +182,7 @@ const DesktopFeedTable = memo(function DesktopFeedTable({
                   </span>
                 </TableCell>
                 <TableCell
-                  className={`px-4 py-2.5 text-right font-mono text-xs font-semibold ${
+                  className={`px-4 py-3 text-right font-mono text-sm leading-snug font-semibold ${
                     feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
                   }`}
                 >
@@ -199,7 +199,7 @@ const DesktopFeedTable = memo(function DesktopFeedTable({
                     {Math.abs(feed.change24h).toFixed(2)}%
                   </span>
                 </TableCell>
-                <TableCell className="px-4 py-2.5 text-right font-mono text-xs text-slate-300">
+                <TableCell className="px-4 py-3 text-right font-mono text-sm leading-snug text-slate-300">
                   <span
                     className={`inline-block transition-[filter] duration-300 ${
                       updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
@@ -271,8 +271,8 @@ const MobileFeedCards = memo(function MobileFeedCards({
               <div className="flex items-center gap-2">
                 <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
                 <div>
-                  <p className="text-sm font-semibold text-slate-100">{feed.symbol}</p>
-                  <p className="text-xs text-slate-300 line-clamp-1">{feed.name}</p>
+                  <p className="text-base leading-snug font-semibold text-slate-100">{feed.symbol}</p>
+                  <p className="text-sm leading-snug text-slate-300 line-clamp-1">{feed.name}</p>
                 </div>
               </div>
               <Button
@@ -295,14 +295,14 @@ const MobileFeedCards = memo(function MobileFeedCards({
             </div>
             <div className="mt-2 flex items-center justify-between">
               <p
-                className={`font-mono text-sm text-slate-100 transition-[filter] duration-300 ${
+                className={`font-mono text-base leading-snug text-slate-100 transition-[filter] duration-300 ${
                   updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
                 }`}
               >
                 ${formatPrice(feed.price)}
               </p>
               <p
-                className={`text-xs font-semibold transition-[filter] duration-300 ${
+                className={`text-sm leading-snug font-semibold transition-[filter] duration-300 ${
                   updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
                 } ${
                   feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
@@ -313,7 +313,7 @@ const MobileFeedCards = memo(function MobileFeedCards({
               </p>
             </div>
             <p
-              className={`mt-1 text-right font-mono text-[11px] text-slate-300 transition-[filter] duration-300 ${
+              className={`mt-1 text-right font-mono text-xs leading-snug text-slate-300 transition-[filter] duration-300 ${
                 updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
               }`}
             >
@@ -357,15 +357,15 @@ const FeedPanel = memo(function FeedPanel({
     >
       <div className="flex items-center justify-between gap-3 border-b border-slate-300/10 bg-[#060d19] px-3 py-2 sm:px-4">
         <div>
-          <h2 className="text-sm sm:text-base font-semibold text-slate-100">{title}</h2>
-          <p className="text-[11px] sm:text-xs text-slate-300">{subtitle}</p>
+          <h2 className="text-base sm:text-lg font-semibold text-slate-100">{title}</h2>
+          <p className="text-xs sm:text-sm leading-relaxed text-slate-300">{subtitle}</p>
         </div>
-        <span className="rounded-md border border-slate-300/15 bg-slate-900/70 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300">
+        <span className="rounded-md border border-slate-300/15 bg-slate-900/70 px-2.5 py-1 text-[11px] uppercase tracking-wide text-slate-300">
           {feeds.length} rows
         </span>
       </div>
       {!!lastRefreshedAt && (
-        <div className="border-b border-slate-300/10 bg-[#060d19] px-3 py-1 text-[10px] text-slate-300 sm:px-4">
+        <div className="border-b border-slate-300/10 bg-[#060d19] px-3 py-1.5 text-[11px] text-slate-300 sm:px-4">
           Last refresh: {new Date(lastRefreshedAt).toLocaleTimeString()}
         </div>
       )}
@@ -503,9 +503,9 @@ export default function PriceFeedsPage() {
       <section className="glass rounded-2xl border border-slate-300/15 p-3 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-cyan-200/80">Market Terminal</p>
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-100">Asset Feed Board</h1>
-            <p className="text-xs sm:text-sm text-slate-300">
+            <p className="text-xs uppercase tracking-widest text-cyan-200/80">Market Terminal</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-100">Asset Feed Board</h1>
+            <p className="text-sm sm:text-base leading-relaxed text-slate-300">
               USD is default for all pairs. Type any symbol or cross pair like BTC/ETH.
             </p>
           </div>
@@ -516,7 +516,7 @@ export default function PriceFeedsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search feed (BTC, ETH, SOL) or pair (BTC/ETH)"
-                className="h-10 pl-9 pr-10 rounded-xl"
+                className="h-11 pl-10 pr-10 rounded-xl text-sm sm:text-base"
               />
               {searchQuery && (
                 <button
@@ -532,13 +532,13 @@ export default function PriceFeedsPage() {
                 <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-slate-300/20 bg-[#08101d]/95 shadow-2xl backdrop-blur-md">
                   <div className="max-h-72 overflow-y-auto">
                     {searchLoading && (
-                      <p className="px-3 py-2 text-xs text-slate-300">Searching feeds...</p>
+                      <p className="px-3 py-2.5 text-sm text-slate-300">Searching feeds...</p>
                     )}
                     {!searchLoading && searchError && (
-                      <p className="px-3 py-2 text-xs text-red-300">{searchError}</p>
+                      <p className="px-3 py-2.5 text-sm text-red-300">{searchError}</p>
                     )}
                     {!searchLoading && !searchError && searchResults.length === 0 && (
-                      <p className="px-3 py-2 text-xs text-slate-300">No matching feeds.</p>
+                      <p className="px-3 py-2.5 text-sm text-slate-300">No matching feeds.</p>
                     )}
                     {!searchLoading &&
                       !searchError &&
@@ -546,7 +546,7 @@ export default function PriceFeedsPage() {
                         <button
                           key={feed.id}
                           type="button"
-                          className="flex w-full items-center justify-between gap-3 border-b border-slate-300/10 px-3 py-2 text-left last:border-b-0 hover:bg-slate-800/60"
+                          className="flex w-full items-center justify-between gap-3 border-b border-slate-300/10 px-3 py-2.5 text-left last:border-b-0 hover:bg-slate-800/60"
                           onClick={() => {
                             setSelectedPriceFeed(feed);
                             clearSearch();
@@ -555,18 +555,18 @@ export default function PriceFeedsPage() {
                           <span className="flex min-w-0 items-center gap-2">
                             <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
                             <span className="min-w-0">
-                              <span className="block truncate text-sm font-semibold text-slate-100">
+                              <span className="block truncate text-base font-semibold leading-snug text-slate-100">
                                 {feed.symbol}
                               </span>
-                              <span className="block truncate text-xs text-slate-300">{feed.name}</span>
+                              <span className="block truncate text-sm leading-snug text-slate-300">{feed.name}</span>
                             </span>
                           </span>
                           <span className="text-right">
-                            <span className="block font-mono text-sm text-slate-100">
+                            <span className="block font-mono text-base leading-snug text-slate-100">
                               ${formatPrice(feed.price)}
                             </span>
                             <span
-                              className={`block text-xs font-semibold ${
+                              className={`block text-sm leading-snug font-semibold ${
                                 feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
                               }`}
                             >
@@ -585,7 +585,7 @@ export default function PriceFeedsPage() {
                 <button
                   key={symbol}
                   type="button"
-                  className="rounded-md border border-slate-300/15 bg-[#08101d] px-2.5 py-1 text-[11px] text-slate-300 hover:border-cyan-300/40 hover:text-cyan-200"
+                  className="rounded-md border border-slate-300/15 bg-[#08101d] px-3 py-1.5 text-xs sm:text-sm leading-snug text-slate-300 hover:border-cyan-300/40 hover:text-cyan-200"
                   onClick={() => setSearchQuery(symbol)}
                 >
                   {symbol}
