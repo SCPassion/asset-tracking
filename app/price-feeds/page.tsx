@@ -84,8 +84,12 @@ export default function PriceFeedsPage() {
 
   return (
     <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto animate-fade-up">
         <div className="mb-8 sm:mb-12 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-green-400/25 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-300 mb-4">
+            <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+            Live Pyth Off-chain Oracle
+          </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent mb-3 sm:mb-4">
             Track Any
           </h1>
@@ -132,7 +136,7 @@ export default function PriceFeedsPage() {
                 {isLoading && (
                   <TableRow className="border-b border-white/5">
                     <TableCell colSpan={5} className="px-6 py-8 text-center text-gray-400">
-                      Loading live Pyth price feeds...
+                      <div className="mx-auto h-7 w-64 rounded-md animate-shimmer" />
                     </TableCell>
                   </TableRow>
                 )}
@@ -150,11 +154,12 @@ export default function PriceFeedsPage() {
                     </TableCell>
                   </TableRow>
                 )}
-                {feeds.map((feed) => (
+                {feeds.map((feed, index) => (
                   <TableRow
                     key={feed.id}
-                    className="border-b border-white/5 hover:bg-gradient-to-r hover:from-green-500/5 hover:via-emerald-500/5 hover:to-green-500/5 transition-all duration-300 cursor-pointer group"
+                    className="border-b border-white/5 hover:bg-gradient-to-r hover:from-green-500/5 hover:via-emerald-500/5 hover:to-green-500/5 transition-all duration-300 cursor-pointer group animate-fade-up"
                     onClick={() => setSelectedPriceFeed(feed)}
+                    style={{ animationDelay: `${Math.min(index * 35, 260)}ms` }}
                   >
                     <TableCell className="px-3 sm:px-6 py-3 sm:py-4">
                       <div className="flex items-center gap-2 sm:gap-3">

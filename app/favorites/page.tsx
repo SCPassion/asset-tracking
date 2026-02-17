@@ -78,7 +78,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-4 sm:space-y-6 animate-fade-up">
         <div className="space-y-2 text-center sm:text-left">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
             Favorites
@@ -111,11 +111,12 @@ export default function FavoritesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {favoriteFeeds.map((feed) => (
+                  {favoriteFeeds.map((feed, index) => (
                     <TableRow
                       key={feed.symbol}
-                      className="border-border/40 hover:bg-secondary/30 cursor-pointer transition-colors"
+                      className="border-border/40 hover:bg-secondary/30 cursor-pointer transition-colors animate-fade-up"
                       onClick={() => setSelectedPriceFeed(feed)}
+                      style={{ animationDelay: `${Math.min(index * 40, 280)}ms` }}
                     >
                       <TableCell className="px-2 sm:px-4">
                         <Button
@@ -160,18 +161,8 @@ export default function FavoritesPage() {
                           {Math.abs(feed.change24h).toFixed(2)}%
                         </div>
                       </TableCell>
-                      <TableCell className="px-2 sm:px-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-green-400/40 text-green-400 hover:bg-green-500/20 bg-transparent text-xs sm:text-sm px-2 sm:px-3"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPriceFeed(feed);
-                          }}
-                        >
-                          View
-                        </Button>
+                      <TableCell className="px-2 sm:px-4 text-right text-[11px] text-gray-400">
+                        Tap row
                       </TableCell>
                     </TableRow>
                   ))}
