@@ -121,14 +121,21 @@ function Navigation() {
     const handleFavoritesUpdated = () => {
       void loadTape();
     };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "pyth-favorites") {
+        void loadTape();
+      }
+    };
     window.addEventListener(FAVORITES_UPDATED_EVENT, handleFavoritesUpdated);
+    window.addEventListener("storage", handleStorage);
 
     return () => {
       canceled = true;
       clearInterval(interval);
       window.removeEventListener(FAVORITES_UPDATED_EVENT, handleFavoritesUpdated);
+      window.removeEventListener("storage", handleStorage);
     };
-  }, [pathname]);
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-200/10 glass">

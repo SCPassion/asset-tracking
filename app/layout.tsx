@@ -20,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${spaceGrotesk.className} min-h-screen flex flex-col antialiased`}>
+      <body className={`${spaceGrotesk.className} min-h-screen overflow-x-hidden flex flex-col antialiased`}>
         <Navigation />
         <main className="flex-1">{children}</main>
         <ScrollingFooter />

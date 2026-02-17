@@ -135,14 +135,14 @@ export function PriceDetailModal({
         ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-md animate-fade-up"
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-4xl glass rounded-2xl border border-white/10 shadow-2xl animate-modal-in">
-        <div className="flex items-start justify-between p-6 border-b border-white/10 bg-gradient-to-r from-sky-500/12 via-cyan-500/12 to-amber-400/8">
+      <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto glass rounded-2xl border border-white/10 shadow-2xl animate-modal-in">
+        <div className="flex items-start justify-between p-4 sm:p-6 border-b border-white/10 bg-gradient-to-r from-sky-500/12 via-cyan-500/12 to-amber-400/8">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-sky-300 via-cyan-200 to-amber-200 bg-clip-text text-transparent">
               {priceFeed.symbol}
@@ -169,7 +169,7 @@ export function PriceDetailModal({
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-white/5 rounded-lg p-4 border border-white/10">
               <div className="text-sm text-gray-300 mb-1">Current Price</div>

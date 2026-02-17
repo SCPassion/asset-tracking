@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, Star, TrendingDown, TrendingUp, X } from "lucide-react";
 
 import { PriceDetailModal } from "@/components/price-detail-modal";
@@ -119,7 +119,7 @@ function useTrackedFeeds(type: TrackedFeedType) {
   return { feeds, loading, error, lastRefreshedAt, updatingFeedIds };
 }
 
-function DesktopFeedTable({
+const DesktopFeedTable = memo(function DesktopFeedTable({
   feeds,
   favorites,
   updatingFeedIds,
@@ -234,9 +234,9 @@ function DesktopFeedTable({
       </Table>
     </div>
   );
-}
+});
 
-function MobileFeedCards({
+const MobileFeedCards = memo(function MobileFeedCards({
   feeds,
   favorites,
   updatingFeedIds,
@@ -324,9 +324,9 @@ function MobileFeedCards({
       })}
     </div>
   );
-}
+});
 
-function FeedPanel({
+const FeedPanel = memo(function FeedPanel({
   className,
   title,
   subtitle,
@@ -399,7 +399,7 @@ function FeedPanel({
       )}
     </section>
   );
-}
+});
 
 export default function PriceFeedsPage() {
   const [selectedPriceFeed, setSelectedPriceFeed] = useState<PriceFeed | null>(null);
@@ -476,7 +476,7 @@ export default function PriceFeedsPage() {
     };
   }, [debouncedQuery]);
 
-  const toggleFavorite = (symbol: string) => {
+  const toggleFavorite = useCallback((symbol: string) => {
     const key = normalizeFavoriteSymbol(symbol);
     if (!key) return;
 
@@ -489,12 +489,14 @@ export default function PriceFeedsPage() {
       }
       return next;
     });
-  };
+  }, []);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchQuery("");
     setDebouncedQuery("");
-  };
+  }, []);
+
+  const limitedSearchResults = useMemo(() => searchResults.slice(0, 12), [searchResults]);
 
   return (
     <div className="w-full px-2 pb-6 pt-3 sm:px-4 lg:px-6 space-y-3">
@@ -540,7 +542,7 @@ export default function PriceFeedsPage() {
                     )}
                     {!searchLoading &&
                       !searchError &&
-                      searchResults.map((feed) => (
+                      limitedSearchResults.map((feed) => (
                         <button
                           key={feed.id}
                           type="button"

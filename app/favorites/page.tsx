@@ -138,8 +138,59 @@ export default function FavoritesPage() {
         </div>
 
         {favoriteFeeds.length > 0 ? (
-          <div className="glass rounded-2xl border border-white/10 overflow-hidden">
-            <div className="overflow-x-auto">
+          <>
+            <div className="grid gap-3 md:hidden">
+              {favoriteFeeds.map((feed) => (
+                <button
+                  key={feed.id}
+                  type="button"
+                  className="glass rounded-xl border border-white/10 p-3 text-left"
+                  onClick={() => setSelectedPriceFeed(feed)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-100">
+                          {feed.symbol}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">{feed.name}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="h-7 w-7 shrink-0 hover:bg-amber-300/15"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(favoriteKeyForFeed(feed));
+                      }}
+                    >
+                      <Star className="h-4 w-4 fill-amber-300 text-amber-300" />
+                    </Button>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="font-mono text-sm font-semibold text-slate-100">
+                      ${formatPrice(feed.price)}
+                    </p>
+                    <p
+                      className={`text-xs font-semibold ${
+                        feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
+                      }`}
+                    >
+                      {feed.change24h >= 0 ? "+" : "-"}
+                      {Math.abs(feed.change24h).toFixed(2)}%
+                    </p>
+                  </div>
+                  <p className="mt-1 text-right font-mono text-[11px] text-muted-foreground">
+                    ±${formatPrice(feed.confidence)}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            <div className="hidden md:block glass rounded-2xl border border-white/10 overflow-hidden">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-border/40">
@@ -220,8 +271,9 @@ export default function FavoritesPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
-          </div>
+          </>
         ) : (
           <div className="glass rounded-2xl border border-white/10 p-12 text-center">
             <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
