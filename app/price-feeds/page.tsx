@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, Star, TrendingDown, TrendingUp, X } from "lucide-react";
 
 import { PriceDetailModal } from "@/components/price-detail-modal";
@@ -496,18 +496,13 @@ export default function PriceFeedsPage() {
     setDebouncedQuery("");
   };
 
-  const searchDescription = useMemo(() => {
-    if (!debouncedQuery) return "Use the search bar to query any feed or cross pair.";
-    return `Showing ${searchResults.length} result${searchResults.length === 1 ? "" : "s"} for "${debouncedQuery}".`;
-  }, [debouncedQuery, searchResults.length]);
-
   return (
     <div className="w-full px-2 pb-6 pt-3 sm:px-4 lg:px-6 space-y-3">
       <section className="glass rounded-2xl border border-slate-300/15 p-3 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-cyan-200/80">Oracle Terminal</p>
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-100">Pyth Feed Board</h1>
+            <p className="text-[11px] uppercase tracking-widest text-cyan-200/80">Market Terminal</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-slate-100">Asset Feed Board</h1>
             <p className="text-xs sm:text-sm text-slate-300">
               USD is default for all pairs. Type any symbol or cross pair like BTC/ETH.
             </p>
@@ -530,6 +525,58 @@ export default function PriceFeedsPage() {
                   <X className="h-4 w-4" />
                 </button>
               )}
+
+              {searchQuery.trim().length > 0 && (
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-xl border border-slate-300/20 bg-[#08101d]/95 shadow-2xl backdrop-blur-md">
+                  <div className="max-h-72 overflow-y-auto">
+                    {searchLoading && (
+                      <p className="px-3 py-2 text-xs text-slate-300">Searching feeds...</p>
+                    )}
+                    {!searchLoading && searchError && (
+                      <p className="px-3 py-2 text-xs text-red-300">{searchError}</p>
+                    )}
+                    {!searchLoading && !searchError && searchResults.length === 0 && (
+                      <p className="px-3 py-2 text-xs text-slate-300">No matching feeds.</p>
+                    )}
+                    {!searchLoading &&
+                      !searchError &&
+                      searchResults.map((feed) => (
+                        <button
+                          key={feed.id}
+                          type="button"
+                          className="flex w-full items-center justify-between gap-3 border-b border-slate-300/10 px-3 py-2 text-left last:border-b-0 hover:bg-slate-800/60"
+                          onClick={() => {
+                            setSelectedPriceFeed(feed);
+                            clearSearch();
+                          }}
+                        >
+                          <span className="flex min-w-0 items-center gap-2">
+                            <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-semibold text-slate-100">
+                                {feed.symbol}
+                              </span>
+                              <span className="block truncate text-xs text-slate-300">{feed.name}</span>
+                            </span>
+                          </span>
+                          <span className="text-right">
+                            <span className="block font-mono text-sm text-slate-100">
+                              ${formatPrice(feed.price)}
+                            </span>
+                            <span
+                              className={`block text-xs font-semibold ${
+                                feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
+                              }`}
+                            >
+                              {feed.change24h >= 0 ? "+" : "-"}
+                              {Math.abs(feed.change24h).toFixed(2)}%
+                            </span>
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {QUICK_SEARCHES.map((symbol) => (
@@ -548,17 +595,6 @@ export default function PriceFeedsPage() {
       </section>
 
       <div className="grid grid-cols-1 gap-3">
-        <FeedPanel
-          title="Search Results"
-          subtitle={searchDescription}
-          feeds={debouncedQuery ? searchResults : []}
-          loading={debouncedQuery ? searchLoading : false}
-          error={debouncedQuery ? searchError : null}
-          favorites={favorites}
-          onToggleFavorite={toggleFavorite}
-          onSelect={setSelectedPriceFeed}
-        />
-
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
           <FeedPanel
             title="Suggested Crypto Feeds"

@@ -1,6 +1,7 @@
 import type { PriceFeed } from "@/lib/price-feed-types";
 
 export const FAVORITES_STORAGE_KEY = "pyth-favorites";
+export const FAVORITES_UPDATED_EVENT = "favorites-updated";
 
 export function normalizeFavoriteSymbol(symbol: string): string {
   return symbol.trim().toUpperCase();
@@ -43,4 +44,5 @@ export function writeFavoritesToStorage(favorites: Set<string>): void {
     .filter(Boolean)
     .sort();
   window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(ordered));
+  window.dispatchEvent(new Event(FAVORITES_UPDATED_EVENT));
 }

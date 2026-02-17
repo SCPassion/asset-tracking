@@ -6,10 +6,33 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import {
+  FAVORITES_UPDATED_EVENT,
+  normalizeFavoriteSymbol,
+  readFavoritesFromStorage,
+} from "@/lib/favorites";
 import type { PriceFeed } from "@/lib/price-feed-types";
 
 interface PriceFeedApiResponse {
   feeds: PriceFeed[];
+}
+
+const DEFAULT_TAPE_SYMBOLS = ["BTC", "ETH", "SOL", "PYTH", "FOGO", "JUP"] as const;
+
+function normalizeSymbolForMatch(symbol: string): string {
+  return symbol.replace(/\s+/g, "").toUpperCase();
+}
+
+function baseFromPair(symbol: string): string {
+  const pair = symbol.split(" ")[0] ?? symbol;
+  const [base] = pair.split("/");
+  return (base ?? pair).replace(/[^A-Z0-9]/gi, "").toUpperCase();
+}
+
+function quoteFromPair(symbol: string): string {
+  const pair = symbol.split(" ")[0] ?? symbol;
+  const [, quote] = pair.split("/");
+  return (quote ?? "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
 }
 
 function formatTickerPrice(value: number): string {
@@ -35,12 +58,56 @@ function Navigation() {
 
     const loadTape = async () => {
       try {
-        const response = await fetch("/api/price-feeds", { cache: "no-store" });
-        if (!response.ok) return;
+        const favoriteSymbols = [...readFavoritesFromStorage()].slice(0, 8);
+        const symbolsToResolve =
+          favoriteSymbols.length > 0 ? favoriteSymbols : [...DEFAULT_TAPE_SYMBOLS];
 
-        const payload = (await response.json()) as PriceFeedApiResponse;
+        const resolved = await Promise.all(
+          symbolsToResolve.map(async (symbol) => {
+            const normalizedInput = normalizeFavoriteSymbol(symbol);
+            const query = normalizedInput.includes("/")
+              ? normalizedInput
+              : `${normalizedInput}/USD`;
+            const preferredBase = baseFromPair(normalizedInput);
+            const preferredQuote = quoteFromPair(normalizedInput) || "USD";
+
+            const response = await fetch(
+              `/api/price-feeds/search?q=${encodeURIComponent(query)}`,
+              { cache: "no-store" }
+            );
+            if (!response.ok) {
+              return null;
+            }
+
+            const payload = (await response.json()) as PriceFeedApiResponse;
+            const candidates = payload.feeds ?? [];
+            const exactPair = candidates.find(
+              (feed) =>
+                baseFromPair(feed.symbol) === preferredBase &&
+                quoteFromPair(feed.symbol) === preferredQuote
+            );
+            if (exactPair) return exactPair;
+
+            const exactText = candidates.find(
+              (feed) =>
+                normalizeSymbolForMatch(feed.symbol) === normalizeSymbolForMatch(query)
+            );
+            if (exactText) return exactText;
+
+            const usdFallback = candidates.find((feed) => quoteFromPair(feed.symbol) === "USD");
+            return usdFallback ?? candidates[0] ?? null;
+          })
+        );
+
         if (!canceled) {
-          setTapeFeeds((payload.feeds ?? []).slice(0, 5));
+          const deduped = new Map<string, PriceFeed>();
+          for (const feed of resolved) {
+            if (!feed) continue;
+            if (!deduped.has(feed.id)) {
+              deduped.set(feed.id, feed);
+            }
+          }
+          setTapeFeeds([...deduped.values()].slice(0, 5));
         }
       } catch {
         if (!canceled) {
@@ -50,13 +117,18 @@ function Navigation() {
     };
 
     loadTape();
-    const interval = setInterval(loadTape, 30_000);
+    const interval = setInterval(loadTape, 15_000);
+    const handleFavoritesUpdated = () => {
+      void loadTape();
+    };
+    window.addEventListener(FAVORITES_UPDATED_EVENT, handleFavoritesUpdated);
 
     return () => {
       canceled = true;
       clearInterval(interval);
+      window.removeEventListener(FAVORITES_UPDATED_EVENT, handleFavoritesUpdated);
     };
-  }, []);
+  }, [pathname]);
 
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-200/10 glass">
@@ -114,10 +186,10 @@ function Navigation() {
         </div>
       </div>
 
-      <div className="hidden md:flex relative items-center border-t border-slate-300/10 px-3 sm:px-4 h-9 text-xs text-slate-200">
-        <div className="flex w-full items-center justify-start gap-4 overflow-x-auto pr-28">
-          {tapeFeeds.length > 0 ? (
-            tapeFeeds.map((feed) => (
+      {tapeFeeds.length > 0 && (
+        <div className="hidden md:flex relative items-center border-t border-slate-300/10 px-3 sm:px-4 h-9 text-xs text-slate-200">
+          <div className="flex w-full items-center justify-start gap-4 overflow-x-auto pr-28">
+            {tapeFeeds.map((feed) => (
               <span key={feed.id} className="whitespace-nowrap">
                 <span className="text-slate-100">{feed.symbol.split("/")[0]}</span>{" "}
                 <span className="text-slate-200">${formatTickerPrice(feed.price)}</span>{" "}
@@ -126,13 +198,11 @@ function Navigation() {
                   {Math.abs(feed.change24h).toFixed(1)}%
                 </span>
               </span>
-            ))
-          ) : (
-            <span className="text-slate-500">Loading tape...</span>
-          )}
+            ))}
+          </div>
+          <span className="absolute right-3 sm:right-4 text-slate-500">Hermes v2 Live</span>
         </div>
-        <span className="absolute right-3 sm:right-4 text-slate-500">Hermes v2 Live</span>
-      </div>
+      )}
 
       {/* Mobile menu */}
       {isMenuOpen && (

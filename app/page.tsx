@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   return (
-    <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 min-h-full">
+    <div className="flex h-full items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
       <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
         <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-sky-400/10 border border-sky-300/30 mb-6 sm:mb-8 backdrop-blur-sm">
           <div className="w-2 h-2 rounded-full bg-sky-300 animate-pulse glow-cyan-sm" />
