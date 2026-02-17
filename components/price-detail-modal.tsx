@@ -142,16 +142,16 @@ export function PriceDetailModal({
       />
 
       <div className="relative w-full max-w-4xl glass rounded-2xl border border-white/10 shadow-2xl animate-modal-in">
-        <div className="flex items-start justify-between p-6 border-b border-white/10 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10">
+        <div className="flex items-start justify-between p-6 border-b border-white/10 bg-gradient-to-r from-sky-500/12 via-cyan-500/12 to-amber-400/8">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
+            <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-sky-300 via-cyan-200 to-amber-200 bg-clip-text text-transparent">
               {priceFeed.symbol}
             </h2>
             <p className="text-sm text-gray-300">{priceFeed.name}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-green-300 transition-all duration-300 p-1 rounded-lg hover:bg-green-500/10"
+            className="text-gray-400 hover:text-sky-200 transition-all duration-300 p-1 rounded-lg hover:bg-sky-500/10"
           >
             <svg
               className="w-6 h-6"
@@ -193,7 +193,7 @@ export function PriceDetailModal({
               <div className="text-sm text-gray-300 mb-1">24h Change</div>
               <div
                 className={`text-xl sm:text-2xl font-bold font-mono inline-flex items-center gap-1 ${
-                  priceFeed.change24h >= 0 ? "text-green-400" : "text-red-400"
+                  priceFeed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
                 }`}
               >
                 {priceFeed.change24h >= 0 ? (
@@ -234,7 +234,7 @@ export function PriceDetailModal({
               </div>
               <div
                 className={`text-xl sm:text-2xl font-bold font-mono ${
-                  rangeChange >= 0 ? "text-green-400" : "text-red-400"
+                  rangeChange >= 0 ? "text-cyan-300" : "text-red-400"
                 }`}
               >
                 {rangeChange >= 0 ? "+" : ""}
@@ -255,8 +255,8 @@ export function PriceDetailModal({
                     onClick={() => setInterval(value)}
                     className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
                       interval === value
-                        ? "bg-green-500/20 text-green-300"
-                        : "text-gray-400 hover:text-green-300"
+                        ? "bg-sky-500/20 text-sky-200"
+                        : "text-gray-400 hover:text-sky-200"
                     }`}
                   >
                     {INTERVAL_LABELS[value]}
@@ -298,9 +298,9 @@ export function PriceDetailModal({
                   >
                     <defs>
                       <linearGradient id="history-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#22c55e" />
-                        <stop offset="50%" stopColor="#10b981" />
-                        <stop offset="100%" stopColor="#34d399" />
+                        <stop offset="0%" stopColor="#38bdf8" />
+                        <stop offset="50%" stopColor="#22d3ee" />
+                        <stop offset="100%" stopColor="#fbbf24" />
                       </linearGradient>
                     </defs>
                     <polyline

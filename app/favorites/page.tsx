@@ -128,7 +128,7 @@ export default function FavoritesPage() {
     <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
       <div className="space-y-4 sm:space-y-6 animate-fade-up">
         <div className="space-y-2 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-sky-300 via-cyan-200 to-amber-200 bg-clip-text text-transparent">
             Favorites
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
@@ -170,13 +170,13 @@ export default function FavoritesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 sm:h-8 sm:w-8 hover:bg-green-500/20"
+                          className="h-6 w-6 sm:h-8 sm:w-8 hover:bg-amber-300/15"
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleFavorite(favoriteKeyForFeed(feed));
                           }}
                         >
-                          <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-green-400 text-green-400" />
+                          <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-amber-300 text-amber-300" />
                         </Button>
                       </TableCell>
                       <TableCell className="px-2 sm:px-4">
@@ -198,7 +198,7 @@ export default function FavoritesPage() {
                       <TableCell className="text-right px-2 sm:px-4">
                         <div
                           className={`inline-flex items-center gap-1 font-semibold text-xs sm:text-sm ${
-                            feed.change24h >= 0 ? "text-green-400" : "text-red-400"
+                            feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
                           }`}
                         >
                           {feed.change24h >= 0 ? (
@@ -231,7 +231,7 @@ export default function FavoritesPage() {
             </p>
             <Button
               variant="outline"
-              className="border-green-400/40 text-green-400 hover:bg-green-500/20 bg-transparent"
+              className="border-sky-300/40 text-sky-200 hover:bg-sky-500/20 bg-transparent"
             >
               Browse Price Feeds
             </Button>

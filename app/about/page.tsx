@@ -12,7 +12,7 @@ export default function AboutPage() {
       <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="space-y-3 sm:space-y-4 text-center">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-sky-300 via-cyan-200 to-amber-200 bg-clip-text text-transparent">
             About Pyth Price Feeds
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-muted-foreground">

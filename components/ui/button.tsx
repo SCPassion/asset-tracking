@@ -9,16 +9,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-400 hover:to-emerald-400 hover:shadow-lg hover:shadow-green-500/25 active:scale-[0.98]",
+        default: "bg-gradient-to-r from-sky-500 via-cyan-400 to-teal-400 text-slate-950 hover:from-sky-400 hover:via-cyan-300 hover:to-teal-300 hover:shadow-lg hover:shadow-sky-500/25 active:scale-[0.98]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border border-white/20 bg-white/5 backdrop-blur-sm shadow-xs hover:bg-white/10 hover:border-green-500/30 hover:text-green-300 dark:bg-input/20 dark:border-white/10 dark:hover:bg-input/30 transition-all duration-300",
+          "border border-slate-300/20 bg-slate-900/40 backdrop-blur-sm shadow-xs hover:bg-slate-800/60 hover:border-sky-400/40 hover:text-sky-200 dark:bg-input/20 dark:border-white/10 dark:hover:bg-input/30 transition-all duration-300",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-white/10",
         ghost:
-          "hover:bg-white/5 hover:text-green-300 dark:hover:bg-white/5 transition-all duration-300",
-        link: "text-green-400 underline-offset-4 hover:underline hover:text-green-300",
+          "hover:bg-white/5 hover:text-sky-200 dark:hover:bg-white/5 transition-all duration-300",
+        link: "text-sky-300 underline-offset-4 hover:underline hover:text-cyan-200",
       },
       size: {
         default: "h-11 px-6 py-2.5 has-[>svg]:px-4",

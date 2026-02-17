@@ -6,16 +6,16 @@ export default function HomePage() {
   return (
     <div className="flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 min-h-full">
       <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
-        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6 sm:mb-8 backdrop-blur-sm">
-          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse glow-green-sm" />
-          <span className="text-xs sm:text-sm font-medium text-green-300">
+        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-sky-400/10 border border-sky-300/30 mb-6 sm:mb-8 backdrop-blur-sm">
+          <div className="w-2 h-2 rounded-full bg-sky-300 animate-pulse glow-cyan-sm" />
+          <span className="text-xs sm:text-sm font-medium text-sky-200">
             ASSET TRACKING
           </span>
         </div>
 
         <div className="space-y-2 sm:space-y-4">
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-4 sm:mb-6 text-balance leading-tight">
-            <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-green-400 bg-clip-text text-transparent animate-gradient">
+            <span className="bg-gradient-to-r from-sky-300 via-cyan-200 to-amber-200 bg-clip-text text-transparent animate-gradient">
               Track Any
             </span>
             <br />
@@ -27,7 +27,7 @@ export default function HomePage() {
           </h1>
         </div>
 
-        <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-8 sm:mb-12 max-w-3xl mx-auto text-balance px-4">
+        <p className="text-base sm:text-lg md:text-xl text-slate-300 mb-8 sm:mb-12 max-w-3xl mx-auto text-balance px-4">
           Real-time asset monitoring with advanced analytics for DeFi protocols
           and blockchain infrastructure.
         </p>
