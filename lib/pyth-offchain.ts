@@ -20,7 +20,10 @@ type HermesDiscovery = {
     symbol?: string;
     display_symbol?: string;
     generic_symbol?: string;
+    description?: string;
+    display_name?: string;
     base?: string;
+    base_asset?: string;
     quote_currency?: string;
     quote?: string;
     asset_type?: string;
@@ -141,6 +144,50 @@ function pickMatchingFeed(feeds: HermesDiscovery[], symbol: string): HermesDisco
   return exact ?? feeds[0];
 }
 
+function resolveFeedSymbol(feed: HermesDiscovery): string {
+  const attr = feed.attributes;
+  const pairFromParts =
+    attr?.base && (attr?.quote_currency ?? attr?.quote)
+      ? `${attr.base}/${attr.quote_currency ?? attr?.quote}`
+      : undefined;
+  const fallback =
+    pairFromParts ??
+    attr?.symbol ??
+    attr?.generic_symbol ??
+    attr?.display_symbol ??
+    "UNKNOWN/USD";
+
+  return fallback.includes("/") ? fallback : `${fallback}/USD`;
+}
+
+function resolveFeedName(feed: HermesDiscovery, symbol: string): string {
+  const attr = feed.attributes;
+  return (
+    attr?.display_name ??
+    attr?.description ??
+    attr?.base_asset ??
+    attr?.base ??
+    symbol
+  );
+}
+
+function resolveTradingViewSymbol(feed: HermesDiscovery, fallbackDisplaySymbol: string): string {
+  const attr = feed.attributes;
+  if (attr?.symbol) {
+    return attr.symbol;
+  }
+
+  const displayPair = fallbackDisplaySymbol.includes(" ")
+    ? fallbackDisplaySymbol.split(" ")[0]
+    : fallbackDisplaySymbol;
+
+  if (displayPair.includes("/")) {
+    return `Crypto.${displayPair}`;
+  }
+
+  return `Crypto.${displayPair}/USD`;
+}
+
 async function discoverFeedId(symbol: string, assetType: string): Promise<string | null> {
   const params = new URLSearchParams({ query: symbol, asset_type: assetType });
   const url = `${HERMES_BASE}/v2/price_feeds?${params.toString()}`;
@@ -239,6 +286,8 @@ export async function getTrackedPriceFeeds(): Promise<PriceFeed[]> {
       id: slugify(asset.symbol),
       symbol: asset.symbol,
       name: asset.name,
+      tradingViewSymbol: `Crypto.${asset.symbol}`,
+      baseSymbol: asset.symbol,
       price: Number(latest.price.toFixed(6)),
       confidence: Number(latest.confidence.toFixed(6)),
       change24h: Number(change24h.toFixed(2)),
@@ -248,4 +297,63 @@ export async function getTrackedPriceFeeds(): Promise<PriceFeed[]> {
   }
 
   return feeds;
+}
+
+export async function searchPriceFeeds(
+  query: string,
+  limit = 40
+): Promise<PriceFeed[]> {
+  const trimmed = query.trim();
+  if (!trimmed) {
+    return [];
+  }
+
+  const params = new URLSearchParams({ query: trimmed });
+  const url = `${HERMES_BASE}/v2/price_feeds?${params.toString()}`;
+  const discovered = await fetchWithRetry<HermesDiscovery[]>(url);
+
+  if (!Array.isArray(discovered) || discovered.length === 0) {
+    return [];
+  }
+
+  const candidates = discovered
+    .filter((feed) => typeof feed.id === "string" && feed.id.length > 0)
+    .slice(0, limit);
+
+  const ids = candidates.map((feed) => feed.id as string);
+  const latestById = await fetchLatestPrices(ids);
+  const dayAgoTimestamp = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+
+  let dayAgoById = new Map<string, ParsedPrice>();
+  try {
+    dayAgoById = await fetchDayAgoPrices(ids, dayAgoTimestamp);
+  } catch (error) {
+    console.error("Unable to fetch day-ago prices for search results", error);
+  }
+
+  return candidates.map((feed) => {
+    const id = feed.id as string;
+    const symbol = resolveFeedSymbol(feed);
+    const name = resolveFeedName(feed, symbol);
+    const tradingViewSymbol = resolveTradingViewSymbol(feed, symbol);
+    const latest = normalizePrice(latestById.get(id)?.price);
+    const previous = normalizePrice(dayAgoById.get(id)?.price);
+    const change24h =
+      previous.price > 0
+        ? ((latest.price - previous.price) / previous.price) * 100
+        : 0;
+
+    return {
+      id: `${slugify(symbol)}-${id.slice(0, 8)}`,
+      symbol,
+      name,
+      tradingViewSymbol,
+      baseSymbol: symbol,
+      price: Number(latest.price.toFixed(6)),
+      confidence: Number(latest.confidence.toFixed(6)),
+      change24h: Number(change24h.toFixed(2)),
+      lastUpdated: new Date(latest.publishTime * 1000).toISOString(),
+      priceHistory: buildSyntheticHistory(latest.price),
+    };
+  });
 }

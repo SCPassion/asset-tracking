@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-
-import { TradingViewChart } from "@/components/tradingview-chart";
+import { useEffect, useState } from "react";
 import type { PriceFeed } from "@/lib/price-feed-types";
 
 interface PriceDetailModalProps {
@@ -11,11 +9,36 @@ interface PriceDetailModalProps {
   onClose: () => void;
 }
 
+type HistoryInterval = "24h" | "7d" | "1m" | "1y";
+
+const INTERVAL_LABELS: Record<HistoryInterval, string> = {
+  "24h": "24H",
+  "7d": "7D",
+  "1m": "1M",
+  "1y": "1Y",
+};
+
+function formatAxisLabel(time: string, interval: HistoryInterval): string {
+  const date = new Date(time);
+  if (interval === "24h") {
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  if (interval === "7d" || interval === "1m") {
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+  return date.toLocaleDateString([], { month: "short", year: "2-digit" });
+}
+
 export function PriceDetailModal({
   priceFeed,
   open,
   onClose,
 }: PriceDetailModalProps) {
+  const [interval, setInterval] = useState<HistoryInterval>("24h");
+  const [history, setHistory] = useState<{ time: string; price: number }[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -24,7 +47,92 @@ export function PriceDetailModal({
     return () => window.removeEventListener("keydown", handleEscape);
   }, [onClose]);
 
+  useEffect(() => {
+    if (!open || !priceFeed) return;
+
+    let canceled = false;
+    const loadHistory = async () => {
+      setLoadingHistory(true);
+      setHistoryError(null);
+      try {
+        const symbol = priceFeed.tradingViewSymbol ?? priceFeed.symbol;
+        const params = new URLSearchParams({ symbol, interval });
+        if (priceFeed.denominatorTradingViewSymbol) {
+          params.set("denominator_symbol", priceFeed.denominatorTradingViewSymbol);
+        }
+        const response = await fetch(`/api/price-feeds/history?${params.toString()}`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`History request failed with status ${response.status}`);
+        }
+
+        const payload = (await response.json()) as {
+          points?: { time: string; price: number }[];
+        };
+        const points = Array.isArray(payload.points) ? payload.points : [];
+
+        if (!canceled) {
+          setHistory(points);
+        }
+      } catch {
+        if (!canceled) {
+          setHistory([]);
+          setHistoryError("Unable to load interval history.");
+        }
+      } finally {
+        if (!canceled) {
+          setLoadingHistory(false);
+        }
+      }
+    };
+
+    loadHistory();
+    return () => {
+      canceled = true;
+    };
+  }, [open, priceFeed, interval]);
+
   if (!open || !priceFeed) return null;
+
+  const chartData = history.length
+    ? history
+    : priceFeed.priceHistory.map((point) => ({
+        time: point.time,
+        price: point.price,
+      }));
+
+  const maxPrice = chartData.length
+    ? Math.max(...chartData.map((d) => d.price))
+    : priceFeed.price;
+  const minPrice = chartData.length
+    ? Math.min(...chartData.map((d) => d.price))
+    : priceFeed.price;
+  const priceRange = Math.max(maxPrice - minPrice, 1e-9);
+
+  const points = chartData.map((point, index) => {
+    const x = chartData.length > 1 ? (index / (chartData.length - 1)) * 100 : 0;
+    const y = ((maxPrice - point.price) / priceRange) * 100;
+    return `${x},${y}`;
+  });
+
+  const startPrice = chartData[0]?.price ?? priceFeed.price;
+  const endPrice = chartData[chartData.length - 1]?.price ?? priceFeed.price;
+  const rangeChange =
+    startPrice > 0 ? ((endPrice - startPrice) / startPrice) * 100 : 0;
+
+  const axisLabels =
+    chartData.length < 2
+      ? ["", "", ""]
+      : [
+          formatAxisLabel(chartData[0]?.time ?? "", interval),
+          formatAxisLabel(
+            chartData[Math.floor(chartData.length / 2)]?.time ?? "",
+            interval
+          ),
+          formatAxisLabel(chartData[chartData.length - 1]?.time ?? "", interval),
+        ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -62,7 +170,7 @@ export function PriceDetailModal({
         </div>
 
         <div className="p-6 space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-white/5 rounded-lg p-4 border border-white/10">
               <div className="text-sm text-gray-300 mb-1">Current Price</div>
               <div className="text-xl sm:text-2xl font-bold text-white font-mono">
@@ -120,20 +228,108 @@ export function PriceDetailModal({
                 {Math.abs(priceFeed.change24h).toFixed(2)}%
               </div>
             </div>
+            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+              <div className="text-sm text-gray-300 mb-1">
+                {INTERVAL_LABELS[interval]} Change
+              </div>
+              <div
+                className={`text-xl sm:text-2xl font-bold font-mono ${
+                  rangeChange >= 0 ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {rangeChange >= 0 ? "+" : ""}
+                {rangeChange.toFixed(2)}%
+              </div>
+            </div>
           </div>
 
           <div className="bg-white/5 rounded-lg p-4 border border-white/10 space-y-4">
-            <h3 className="text-sm font-medium text-gray-300">
-              Interactive TradingView Chart
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-sm font-medium text-gray-300">
+                Historical Price Chart
+              </h3>
+              <div className="inline-flex rounded-lg bg-black/30 border border-white/10 p-1">
+                {(Object.keys(INTERVAL_LABELS) as HistoryInterval[]).map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => setInterval(value)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                      interval === value
+                        ? "bg-green-500/20 text-green-300"
+                        : "text-gray-400 hover:text-green-300"
+                    }`}
+                  >
+                    {INTERVAL_LABELS[value]}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <TradingViewChart symbol={priceFeed.symbol} />
+            {loadingHistory && (
+              <div className="h-56 rounded-lg border border-white/10 bg-black/20 animate-shimmer" />
+            )}
+
+            {!loadingHistory && (
+              <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                  <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
+                    <div className="text-[11px] text-gray-400">High</div>
+                    <div className="font-mono text-sm text-white">${maxPrice.toFixed(2)}</div>
+                  </div>
+                  <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
+                    <div className="text-[11px] text-gray-400">Low</div>
+                    <div className="font-mono text-sm text-white">${minPrice.toFixed(2)}</div>
+                  </div>
+                  <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
+                    <div className="text-[11px] text-gray-400">Start</div>
+                    <div className="font-mono text-sm text-white">${startPrice.toFixed(2)}</div>
+                  </div>
+                  <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
+                    <div className="text-[11px] text-gray-400">End</div>
+                    <div className="font-mono text-sm text-white">${endPrice.toFixed(2)}</div>
+                  </div>
+                </div>
+
+                <div className="relative h-56">
+                  <svg
+                    className="w-full h-full"
+                    preserveAspectRatio="none"
+                    viewBox="0 0 100 100"
+                  >
+                    <defs>
+                      <linearGradient id="history-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#22c55e" />
+                        <stop offset="50%" stopColor="#10b981" />
+                        <stop offset="100%" stopColor="#34d399" />
+                      </linearGradient>
+                    </defs>
+                    <polyline
+                      fill="none"
+                      stroke="url(#history-line-gradient)"
+                      strokeWidth="2"
+                      points={points.join(" ")}
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </svg>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between text-[11px] text-gray-500 font-mono">
+                  <span>{axisLabels[0]}</span>
+                  <span>{axisLabels[1]}</span>
+                  <span>{axisLabels[2]}</span>
+                </div>
+              </div>
+            )}
+
+            {historyError && (
+              <p className="text-xs text-amber-300">{historyError}</p>
+            )}
           </div>
 
           <div className="text-xs text-gray-400 space-y-1 bg-white/5 rounded-lg p-4 border border-white/10">
             <p>
               Data sourced from Pyth Network off-chain oracle (Hermes v2).
-              Use the TradingView toolbar to switch timeframe intervals.
+              Interval chart data comes from Pyth Benchmarks historical API.
             </p>
             <p>Last updated: {new Date(priceFeed.lastUpdated).toLocaleString()}</p>
           </div>

@@ -12,6 +12,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  favoriteKeyForFeed,
+  normalizeFavoriteSymbol,
+  readFavoritesFromStorage,
+  writeFavoritesToStorage,
+} from "@/lib/favorites";
 import type { PriceFeed } from "@/lib/price-feed-types";
 
 interface PriceFeedApiResponse {
@@ -27,24 +33,63 @@ function formatPrice(value: number): string {
 }
 
 export default function FavoritesPage() {
-  const [selectedPriceFeed, setSelectedPriceFeed] = useState<PriceFeed | null>(
-    null
-  );
-  const [favorites, setFavorites] = useState<Set<string>>(
-    new Set(["BTC/USD", "ETH/USD"])
-  );
+  const [selectedPriceFeed, setSelectedPriceFeed] = useState<PriceFeed | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favoritesReady, setFavoritesReady] = useState(false);
   const [feeds, setFeeds] = useState<PriceFeed[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    setFavorites(readFavoritesFromStorage());
+    setFavoritesReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!favoritesReady) return;
+    writeFavoritesToStorage(favorites);
+  }, [favorites, favoritesReady]);
+
+  useEffect(() => {
+    if (!favoritesReady) return;
+
     let canceled = false;
+    const symbols = [...favorites];
 
     const loadFeeds = async () => {
+      if (!canceled) {
+        setIsLoading(true);
+      }
+
+      if (symbols.length === 0) {
+        if (!canceled) {
+          setFeeds([]);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       try {
-        const response = await fetch("/api/price-feeds", { cache: "no-store" });
-        const payload = (await response.json()) as PriceFeedApiResponse;
-        if (!canceled && response.ok) {
-          setFeeds(payload.feeds ?? []);
+        const resolved = await Promise.all(
+          symbols.map(async (symbol) => {
+            const response = await fetch(
+              `/api/price-feeds/search?q=${encodeURIComponent(symbol)}`,
+              { cache: "no-store" }
+            );
+            if (!response.ok) {
+              return null;
+            }
+
+            const payload = (await response.json()) as PriceFeedApiResponse;
+            const candidates = payload.feeds ?? [];
+            const exact = candidates.find(
+              (feed) => favoriteKeyForFeed(feed) === normalizeFavoriteSymbol(symbol)
+            );
+            return exact ?? candidates[0] ?? null;
+          })
+        );
+
+        if (!canceled) {
+          setFeeds(resolved.filter((feed): feed is PriceFeed => feed !== null));
         }
       } finally {
         if (!canceled) {
@@ -60,21 +105,24 @@ export default function FavoritesPage() {
       canceled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [favorites, favoritesReady]);
 
   const toggleFavorite = (symbol: string) => {
+    const key = normalizeFavoriteSymbol(symbol);
+    if (!key) return;
+
     setFavorites((prev) => {
       const newFavorites = new Set(prev);
-      if (newFavorites.has(symbol)) {
-        newFavorites.delete(symbol);
+      if (newFavorites.has(key)) {
+        newFavorites.delete(key);
       } else {
-        newFavorites.add(symbol);
+        newFavorites.add(key);
       }
       return newFavorites;
     });
   };
 
-  const favoriteFeeds = feeds.filter((feed) => favorites.has(feed.symbol));
+  const favoriteFeeds = feeds;
 
   return (
     <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
@@ -113,7 +161,7 @@ export default function FavoritesPage() {
                 <TableBody>
                   {favoriteFeeds.map((feed, index) => (
                     <TableRow
-                      key={feed.symbol}
+                      key={feed.id}
                       className="border-border/40 hover:bg-secondary/30 cursor-pointer transition-colors animate-fade-up"
                       onClick={() => setSelectedPriceFeed(feed)}
                       style={{ animationDelay: `${Math.min(index * 40, 280)}ms` }}
@@ -125,7 +173,7 @@ export default function FavoritesPage() {
                           className="h-6 w-6 sm:h-8 sm:w-8 hover:bg-green-500/20"
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleFavorite(feed.symbol);
+                            toggleFavorite(favoriteKeyForFeed(feed));
                           }}
                         >
                           <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-green-400 text-green-400" />

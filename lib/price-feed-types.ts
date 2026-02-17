@@ -7,6 +7,10 @@ export interface PriceFeed {
   id: string;
   symbol: string;
   name: string;
+  tradingViewSymbol?: string;
+  baseSymbol?: string;
+  denominatorSymbol?: string;
+  denominatorTradingViewSymbol?: string;
   price: number;
   confidence: number;
   change24h: number;
