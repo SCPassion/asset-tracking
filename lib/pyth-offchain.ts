@@ -96,7 +96,7 @@ async function fetchWithRetry<T>(url: string): Promise<T> {
 
     const shouldRetry = RETRYABLE_STATUSES.has(response.status);
     if (!shouldRetry || attempt === maxAttempts) {
-      throw new Error(`Request failed (${response.status}): ${url}`);
+      throw new Error(`Request failed (${response.status})`);
     }
 
     const baseDelay = 250 * 2 ** (attempt - 1);
@@ -104,7 +104,7 @@ async function fetchWithRetry<T>(url: string): Promise<T> {
     await sleep(baseDelay + jitter);
   }
 
-  throw new Error(`Request failed after retries: ${url}`);
+  throw new Error("Request failed after retries");
 }
 
 function toNumber(value?: string | number): number {
@@ -307,9 +307,17 @@ async function fetchDayAgoPrices(ids: string[], timestamp: number): Promise<Map<
   params.set("parsed", "true");
 
   const url = `${HERMES_BASE}/v2/updates/price/${timestamp}?${params.toString()}`;
-  const payload = await fetchWithRetry<{ parsed?: ParsedPrice[] }>(url);
-
-  return new Map((payload.parsed ?? []).map((item) => [item.id ?? "", item]));
+  try {
+    const payload = await fetchWithRetry<{ parsed?: ParsedPrice[] }>(url);
+    return new Map((payload.parsed ?? []).map((item) => [item.id ?? "", item]));
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("(404)")) {
+      // Some feeds or timestamps do not have day-ago snapshots in Hermes.
+      // Treat this as missing historical data instead of surfacing noisy errors.
+      return new Map();
+    }
+    throw error;
+  }
 }
 
 export async function getTrackedPriceFeeds(type: TrackedAssetType = "crypto"): Promise<PriceFeed[]> {
