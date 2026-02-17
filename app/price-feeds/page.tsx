@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Star, TrendingDown, TrendingUp, X } from "lucide-react";
 
 import { PriceDetailModal } from "@/components/price-detail-modal";
@@ -27,6 +27,7 @@ interface PriceFeedApiResponse {
 }
 
 const QUICK_SEARCHES = ["BTC", "ETH", "SOL", "AAPL", "XAU", "BTC/ETH"];
+type TrackedFeedType = "crypto" | "equity" | "fx";
 
 function formatPrice(value: number): string {
   const maxFractionDigits = value >= 1 ? 2 : 6;
@@ -36,14 +37,97 @@ function formatPrice(value: number): string {
   });
 }
 
+function useTrackedFeeds(type: TrackedFeedType) {
+  const [feeds, setFeeds] = useState<PriceFeed[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<number | null>(null);
+  const [updatingFeedIds, setUpdatingFeedIds] = useState<Set<string>>(new Set());
+  const previousFeedsRef = useRef<Map<string, PriceFeed>>(new Map());
+  const clearEffectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let canceled = false;
+    let isInitialLoad = true;
+
+    const load = async () => {
+      if (!canceled && isInitialLoad) {
+        setLoading(true);
+      }
+      try {
+        const response = await fetch(`/api/price-feeds?type=${type}`, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed with status ${response.status}`);
+        }
+
+        const payload = (await response.json()) as PriceFeedApiResponse;
+        if (!canceled) {
+          const nextFeeds = payload.feeds ?? [];
+          const changedIds = nextFeeds
+            .filter((feed) => {
+              const previous = previousFeedsRef.current.get(feed.id);
+              if (!previous) return false;
+              return (
+                previous.price !== feed.price ||
+                previous.confidence !== feed.confidence ||
+                previous.change24h !== feed.change24h
+              );
+            })
+            .map((feed) => feed.id);
+
+          setFeeds(nextFeeds);
+          previousFeedsRef.current = new Map(nextFeeds.map((feed) => [feed.id, feed]));
+
+          if (changedIds.length > 0) {
+            setUpdatingFeedIds(new Set(changedIds));
+            if (clearEffectTimeoutRef.current) {
+              clearTimeout(clearEffectTimeoutRef.current);
+            }
+            clearEffectTimeoutRef.current = setTimeout(() => {
+              setUpdatingFeedIds(new Set());
+            }, 450);
+          }
+
+          setError(null);
+          setLastRefreshedAt(Date.now());
+        }
+      } catch {
+        if (!canceled) {
+          setError("Unable to load feeds right now.");
+        }
+      } finally {
+        if (!canceled && isInitialLoad) {
+          setLoading(false);
+        }
+        isInitialLoad = false;
+      }
+    };
+
+    load();
+    const interval = setInterval(load, 15_000);
+
+    return () => {
+      canceled = true;
+      clearInterval(interval);
+      if (clearEffectTimeoutRef.current) {
+        clearTimeout(clearEffectTimeoutRef.current);
+      }
+    };
+  }, [type]);
+
+  return { feeds, loading, error, lastRefreshedAt, updatingFeedIds };
+}
+
 function DesktopFeedTable({
   feeds,
   favorites,
+  updatingFeedIds,
   onToggleFavorite,
   onSelect,
 }: {
   feeds: PriceFeed[];
   favorites: Set<string>;
+  updatingFeedIds?: Set<string>;
   onToggleFavorite: (symbol: string) => void;
   onSelect: (feed: PriceFeed) => void;
 }) {
@@ -52,19 +136,19 @@ function DesktopFeedTable({
       <Table>
         <TableHeader>
           <TableRow className="border-b border-slate-300/10 bg-[#060d19]">
-            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-400 uppercase">
+            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-300 uppercase">
               Asset
             </TableHead>
-            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-400 uppercase text-right">
+            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-300 uppercase text-right">
               Price
             </TableHead>
-            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-400 uppercase text-right">
+            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-300 uppercase text-right">
               24h
             </TableHead>
-            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-400 uppercase text-right">
+            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-300 uppercase text-right">
               Confidence
             </TableHead>
-            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-400 uppercase text-right">
+            <TableHead className="px-4 py-2 text-xs font-medium tracking-wide text-slate-300 uppercase text-right">
               Fav
             </TableHead>
           </TableRow>
@@ -85,19 +169,29 @@ function DesktopFeedTable({
                     </div>
                     <div>
                       <div className="text-sm text-slate-100 font-semibold">{feed.symbol}</div>
-                      <div className="text-[11px] text-slate-400 line-clamp-1">{feed.name}</div>
+                      <div className="text-[11px] text-slate-300 line-clamp-1">{feed.name}</div>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell className="px-4 py-2.5 text-right font-mono text-sm text-slate-100">
-                  ${formatPrice(feed.price)}
+                  <span
+                    className={`inline-block transition-[filter] duration-300 ${
+                      updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
+                    }`}
+                  >
+                    ${formatPrice(feed.price)}
+                  </span>
                 </TableCell>
                 <TableCell
                   className={`px-4 py-2.5 text-right font-mono text-xs font-semibold ${
                     feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1">
+                  <span
+                    className={`inline-flex items-center gap-1 transition-[filter] duration-300 ${
+                      updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
+                    }`}
+                  >
                     {feed.change24h >= 0 ? (
                       <TrendingUp className="h-3 w-3" />
                     ) : (
@@ -107,7 +201,13 @@ function DesktopFeedTable({
                   </span>
                 </TableCell>
                 <TableCell className="px-4 py-2.5 text-right font-mono text-xs text-slate-300">
-                  ±${formatPrice(feed.confidence)}
+                  <span
+                    className={`inline-block transition-[filter] duration-300 ${
+                      updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
+                    }`}
+                  >
+                    ±${formatPrice(feed.confidence)}
+                  </span>
                 </TableCell>
                 <TableCell className="px-4 py-2.5 text-right">
                   <Button
@@ -140,11 +240,13 @@ function DesktopFeedTable({
 function MobileFeedCards({
   feeds,
   favorites,
+  updatingFeedIds,
   onToggleFavorite,
   onSelect,
 }: {
   feeds: PriceFeed[];
   favorites: Set<string>;
+  updatingFeedIds?: Set<string>;
   onToggleFavorite: (symbol: string) => void;
   onSelect: (feed: PriceFeed) => void;
 }) {
@@ -169,7 +271,7 @@ function MobileFeedCards({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-slate-100">{feed.symbol}</p>
-                <p className="text-xs text-slate-400 line-clamp-1">{feed.name}</p>
+                <p className="text-xs text-slate-300 line-clamp-1">{feed.name}</p>
               </div>
               <Button
                 variant="ghost"
@@ -190,9 +292,17 @@ function MobileFeedCards({
               </Button>
             </div>
             <div className="mt-2 flex items-center justify-between">
-              <p className="font-mono text-sm text-slate-100">${formatPrice(feed.price)}</p>
               <p
-                className={`text-xs font-semibold ${
+                className={`font-mono text-sm text-slate-100 transition-[filter] duration-300 ${
+                  updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
+                }`}
+              >
+                ${formatPrice(feed.price)}
+              </p>
+              <p
+                className={`text-xs font-semibold transition-[filter] duration-300 ${
+                  updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
+                } ${
                   feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
                 }`}
               >
@@ -200,6 +310,13 @@ function MobileFeedCards({
                 {Math.abs(feed.change24h).toFixed(2)}%
               </p>
             </div>
+            <p
+              className={`mt-1 text-right font-mono text-[11px] text-slate-300 transition-[filter] duration-300 ${
+                updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
+              }`}
+            >
+              ±${formatPrice(feed.confidence)}
+            </p>
           </div>
         );
       })}
@@ -208,35 +325,48 @@ function MobileFeedCards({
 }
 
 function FeedPanel({
+  className,
   title,
   subtitle,
   feeds,
   loading,
   error,
+  lastRefreshedAt,
   favorites,
+  updatingFeedIds,
   onToggleFavorite,
   onSelect,
 }: {
+  className?: string;
   title: string;
   subtitle: string;
   feeds: PriceFeed[];
   loading: boolean;
   error: string | null;
+  lastRefreshedAt?: number | null;
   favorites: Set<string>;
+  updatingFeedIds?: Set<string>;
   onToggleFavorite: (symbol: string) => void;
   onSelect: (feed: PriceFeed) => void;
 }) {
   return (
-    <section className="glass rounded-2xl border border-slate-300/15 overflow-hidden">
+    <section
+      className={`glass rounded-2xl border border-slate-300/15 overflow-hidden ${className ?? ""}`}
+    >
       <div className="flex items-center justify-between gap-3 border-b border-slate-300/10 bg-[#060d19] px-3 py-2 sm:px-4">
         <div>
           <h2 className="text-sm sm:text-base font-semibold text-slate-100">{title}</h2>
-          <p className="text-[11px] sm:text-xs text-slate-400">{subtitle}</p>
+          <p className="text-[11px] sm:text-xs text-slate-300">{subtitle}</p>
         </div>
-        <span className="rounded-md border border-slate-300/15 bg-slate-900/70 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-400">
+        <span className="rounded-md border border-slate-300/15 bg-slate-900/70 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-300">
           {feeds.length} rows
         </span>
       </div>
+      {!!lastRefreshedAt && (
+        <div className="border-b border-slate-300/10 bg-[#060d19] px-3 py-1 text-[10px] text-slate-300 sm:px-4">
+          Last refresh: {new Date(lastRefreshedAt).toLocaleTimeString()}
+        </div>
+      )}
 
       {loading && (
         <div className="p-4">
@@ -245,19 +375,21 @@ function FeedPanel({
       )}
       {!loading && error && <p className="p-4 text-sm text-red-300">{error}</p>}
       {!loading && !error && feeds.length === 0 && (
-        <p className="p-4 text-sm text-slate-400">No feeds to display.</p>
+        <p className="p-4 text-sm text-slate-300">No feeds to display.</p>
       )}
       {!loading && !error && feeds.length > 0 && (
         <>
           <DesktopFeedTable
             feeds={feeds}
             favorites={favorites}
+            updatingFeedIds={updatingFeedIds}
             onToggleFavorite={onToggleFavorite}
             onSelect={onSelect}
           />
           <MobileFeedCards
             feeds={feeds}
             favorites={favorites}
+            updatingFeedIds={updatingFeedIds}
             onToggleFavorite={onToggleFavorite}
             onSelect={onSelect}
           />
@@ -271,10 +403,9 @@ export default function PriceFeedsPage() {
   const [selectedPriceFeed, setSelectedPriceFeed] = useState<PriceFeed | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [favoritesReady, setFavoritesReady] = useState(false);
-
-  const [suggestedFeeds, setSuggestedFeeds] = useState<PriceFeed[]>([]);
-  const [suggestedLoading, setSuggestedLoading] = useState(true);
-  const [suggestedError, setSuggestedError] = useState<string | null>(null);
+  const cryptoFeeds = useTrackedFeeds("crypto");
+  const equityFeeds = useTrackedFeeds("equity");
+  const fxFeeds = useTrackedFeeds("fx");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -298,44 +429,6 @@ export default function PriceFeedsPage() {
     if (!favoritesReady) return;
     writeFavoritesToStorage(favorites);
   }, [favorites, favoritesReady]);
-
-  useEffect(() => {
-    let canceled = false;
-
-    const loadSuggested = async () => {
-      if (!canceled) {
-        setSuggestedLoading(true);
-      }
-      try {
-        const response = await fetch("/api/price-feeds", { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error(`Failed with status ${response.status}`);
-        }
-
-        const payload = (await response.json()) as PriceFeedApiResponse;
-        if (!canceled) {
-          setSuggestedFeeds(payload.feeds ?? []);
-          setSuggestedError(null);
-        }
-      } catch {
-        if (!canceled) {
-          setSuggestedError("Unable to load suggested feeds right now.");
-        }
-      } finally {
-        if (!canceled) {
-          setSuggestedLoading(false);
-        }
-      }
-    };
-
-    loadSuggested();
-    const interval = setInterval(loadSuggested, 30_000);
-
-    return () => {
-      canceled = true;
-      clearInterval(interval);
-    };
-  }, []);
 
   useEffect(() => {
     if (!debouncedQuery) {
@@ -407,13 +500,13 @@ export default function PriceFeedsPage() {
   }, [debouncedQuery, searchResults.length]);
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] px-2 pb-6 pt-3 sm:px-4 lg:px-5 space-y-3">
+    <div className="w-full px-2 pb-6 pt-3 sm:px-4 lg:px-6 space-y-3">
       <section className="glass rounded-2xl border border-slate-300/15 p-3 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-cyan-200/80">Oracle Terminal</p>
             <h1 className="text-xl sm:text-2xl font-semibold text-slate-100">Pyth Feed Board</h1>
-            <p className="text-xs sm:text-sm text-slate-400">
+            <p className="text-xs sm:text-sm text-slate-300">
               USD is default for all pairs. Type any symbol or cross pair like BTC/ETH.
             </p>
           </div>
@@ -452,27 +545,60 @@ export default function PriceFeedsPage() {
         </div>
       </section>
 
-      <FeedPanel
-        title="Search Results"
-        subtitle={searchDescription}
-        feeds={debouncedQuery ? searchResults : []}
-        loading={debouncedQuery ? searchLoading : false}
-        error={debouncedQuery ? searchError : null}
-        favorites={favorites}
-        onToggleFavorite={toggleFavorite}
-        onSelect={setSelectedPriceFeed}
-      />
+      <div className="grid grid-cols-1 gap-3">
+        <FeedPanel
+          title="Search Results"
+          subtitle={searchDescription}
+          feeds={debouncedQuery ? searchResults : []}
+          loading={debouncedQuery ? searchLoading : false}
+          error={debouncedQuery ? searchError : null}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
+          onSelect={setSelectedPriceFeed}
+        />
 
-      <FeedPanel
-        title="Suggested Crypto Feeds"
-        subtitle="High-traffic USD feeds updated every 30 seconds."
-        feeds={suggestedFeeds}
-        loading={suggestedLoading}
-        error={suggestedError}
-        favorites={favorites}
-        onToggleFavorite={toggleFavorite}
-        onSelect={setSelectedPriceFeed}
-      />
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <FeedPanel
+            title="Suggested Crypto Feeds"
+            subtitle="High-traffic USD feeds updated every 15 seconds."
+            className="xl:col-span-2"
+            feeds={cryptoFeeds.feeds}
+            loading={cryptoFeeds.loading}
+            error={cryptoFeeds.error}
+            lastRefreshedAt={cryptoFeeds.lastRefreshedAt}
+            favorites={favorites}
+            updatingFeedIds={cryptoFeeds.updatingFeedIds}
+            onToggleFavorite={toggleFavorite}
+            onSelect={setSelectedPriceFeed}
+          />
+
+          <FeedPanel
+            title="Suggested Equity Feeds"
+            subtitle="Major US equities updated every 15 seconds."
+            feeds={equityFeeds.feeds}
+            loading={equityFeeds.loading}
+            error={equityFeeds.error}
+            lastRefreshedAt={equityFeeds.lastRefreshedAt}
+            favorites={favorites}
+            updatingFeedIds={equityFeeds.updatingFeedIds}
+            onToggleFavorite={toggleFavorite}
+            onSelect={setSelectedPriceFeed}
+          />
+
+          <FeedPanel
+            title="Suggested FX Feeds"
+            subtitle="Top FX pairs updated every 15 seconds."
+            feeds={fxFeeds.feeds}
+            loading={fxFeeds.loading}
+            error={fxFeeds.error}
+            lastRefreshedAt={fxFeeds.lastRefreshedAt}
+            favorites={favorites}
+            updatingFeedIds={fxFeeds.updatingFeedIds}
+            onToggleFavorite={toggleFavorite}
+            onSelect={setSelectedPriceFeed}
+          />
+        </div>
+      </div>
 
       <PriceDetailModal
         priceFeed={selectedPriceFeed}

@@ -3,16 +3,42 @@ import { PriceFeed } from "@/lib/price-feed-types";
 const HERMES_BASE = "https://hermes.pyth.network";
 const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
 
-const TRACKED_ASSETS = [
-  { symbol: "BTC/USD", name: "Bitcoin", assetType: "crypto" },
-  { symbol: "ETH/USD", name: "Ethereum", assetType: "crypto" },
-  { symbol: "SOL/USD", name: "Solana", assetType: "crypto" },
-  { symbol: "AVAX/USD", name: "Avalanche", assetType: "crypto" },
-  { symbol: "MATIC/USD", name: "Polygon", assetType: "crypto" },
-  { symbol: "ATOM/USD", name: "Cosmos", assetType: "crypto" },
-  { symbol: "DOT/USD", name: "Polkadot", assetType: "crypto" },
-  { symbol: "LINK/USD", name: "Chainlink", assetType: "crypto" },
-] as const;
+export type TrackedAssetType = "crypto" | "equity" | "fx";
+
+type TrackedAsset = {
+  symbol: string;
+  name: string;
+  assetType: TrackedAssetType;
+};
+
+const TRACKED_ASSETS_BY_TYPE: Record<TrackedAssetType, readonly TrackedAsset[]> = {
+  crypto: [
+    { symbol: "BTC/USD", name: "Bitcoin", assetType: "crypto" },
+    { symbol: "ETH/USD", name: "Ethereum", assetType: "crypto" },
+    { symbol: "SOL/USD", name: "Solana", assetType: "crypto" },
+    { symbol: "AVAX/USD", name: "Avalanche", assetType: "crypto" },
+    { symbol: "MATIC/USD", name: "Polygon", assetType: "crypto" },
+    { symbol: "ATOM/USD", name: "Cosmos", assetType: "crypto" },
+    { symbol: "DOT/USD", name: "Polkadot", assetType: "crypto" },
+    { symbol: "LINK/USD", name: "Chainlink", assetType: "crypto" },
+  ],
+  equity: [
+    { symbol: "AAPL/USD", name: "Apple", assetType: "equity" },
+    { symbol: "MSFT/USD", name: "Microsoft", assetType: "equity" },
+    { symbol: "NVDA/USD", name: "NVIDIA", assetType: "equity" },
+    { symbol: "TSLA/USD", name: "Tesla", assetType: "equity" },
+    { symbol: "AMZN/USD", name: "Amazon", assetType: "equity" },
+    { symbol: "GOOGL/USD", name: "Alphabet", assetType: "equity" },
+  ],
+  fx: [
+    { symbol: "EUR/USD", name: "Euro / US Dollar", assetType: "fx" },
+    { symbol: "GBP/USD", name: "British Pound / US Dollar", assetType: "fx" },
+    { symbol: "USD/JPY", name: "US Dollar / Japanese Yen", assetType: "fx" },
+    { symbol: "AUD/USD", name: "Australian Dollar / US Dollar", assetType: "fx" },
+    { symbol: "USD/CAD", name: "US Dollar / Canadian Dollar", assetType: "fx" },
+    { symbol: "USD/CHF", name: "US Dollar / Swiss Franc", assetType: "fx" },
+  ],
+};
 
 type HermesDiscovery = {
   id?: string;
@@ -40,8 +66,17 @@ type ParsedPrice = {
   };
 };
 
-let cachedFeedIds: { expiresAt: number; bySymbol: Record<string, string> } | null =
-  null;
+type TrackedFeedReference = {
+  id: string;
+  tradingViewSymbol: string;
+};
+
+const cachedFeedIdsByType: Partial<
+  Record<
+    TrackedAssetType,
+    { expiresAt: number; bySymbol: Record<string, TrackedFeedReference> }
+  >
+> = {};
 
 function normalizeSymbol(value: string): string {
   return value.replace(/\s+/g, "").toUpperCase();
@@ -188,7 +223,21 @@ function resolveTradingViewSymbol(feed: HermesDiscovery, fallbackDisplaySymbol: 
   return `Crypto.${displayPair}/USD`;
 }
 
-async function discoverFeedId(symbol: string, assetType: string): Promise<string | null> {
+function fallbackTrackedTradingViewSymbol(symbol: string, assetType: TrackedAssetType): string {
+  if (assetType === "equity") {
+    const base = symbol.split("/")[0] ?? symbol;
+    return `Equity.US.${base}/USD`;
+  }
+  if (assetType === "fx") {
+    return `FX.${symbol}`;
+  }
+  return `Crypto.${symbol}`;
+}
+
+async function discoverFeedReference(
+  symbol: string,
+  assetType: TrackedAssetType
+): Promise<TrackedFeedReference | null> {
   const params = new URLSearchParams({ query: symbol, asset_type: assetType });
   const url = `${HERMES_BASE}/v2/price_feeds?${params.toString()}`;
   const feeds = await fetchWithRetry<HermesDiscovery[]>(url);
@@ -198,24 +247,40 @@ async function discoverFeedId(symbol: string, assetType: string): Promise<string
   }
 
   const match = pickMatchingFeed(feeds, symbol);
-  return match?.id ?? null;
+  if (!match?.id) {
+    return null;
+  }
+
+  const discoveredSymbol = match.attributes?.symbol;
+  const tradingViewSymbol =
+    typeof discoveredSymbol === "string" && discoveredSymbol.length > 0
+      ? discoveredSymbol
+      : fallbackTrackedTradingViewSymbol(symbol, assetType);
+
+  return { id: match.id, tradingViewSymbol };
 }
 
-async function getFeedIdsBySymbol(): Promise<Record<string, string>> {
+async function getFeedIdsBySymbol(
+  type: TrackedAssetType,
+  trackedAssets: readonly TrackedAsset[]
+): Promise<Record<string, TrackedFeedReference>> {
   const now = Date.now();
-  if (cachedFeedIds && cachedFeedIds.expiresAt > now) {
-    return cachedFeedIds.bySymbol;
+  const cached = cachedFeedIdsByType[type];
+  if (cached && cached.expiresAt > now) {
+    return cached.bySymbol;
   }
 
   const entries = await Promise.all(
-    TRACKED_ASSETS.map(async (asset) => {
-      const id = await discoverFeedId(asset.symbol, asset.assetType);
-      return id ? [asset.symbol, id] : null;
+    trackedAssets.map(async (asset) => {
+      const ref = await discoverFeedReference(asset.symbol, asset.assetType);
+      return ref ? [asset.symbol, ref] : null;
     })
   );
 
-  const bySymbol = Object.fromEntries(entries.filter(Boolean) as [string, string][]);
-  cachedFeedIds = {
+  const bySymbol = Object.fromEntries(
+    entries.filter(Boolean) as [string, TrackedFeedReference][]
+  );
+  cachedFeedIdsByType[type] = {
     bySymbol,
     expiresAt: now + 24 * 60 * 60 * 1000,
   };
@@ -249,9 +314,10 @@ async function fetchDayAgoPrices(ids: string[], timestamp: number): Promise<Map<
   return new Map((payload.parsed ?? []).map((item) => [item.id ?? "", item]));
 }
 
-export async function getTrackedPriceFeeds(): Promise<PriceFeed[]> {
-  const feedIdsBySymbol = await getFeedIdsBySymbol();
-  const ids = Object.values(feedIdsBySymbol);
+export async function getTrackedPriceFeeds(type: TrackedAssetType = "crypto"): Promise<PriceFeed[]> {
+  const trackedAssets = TRACKED_ASSETS_BY_TYPE[type] ?? TRACKED_ASSETS_BY_TYPE.crypto;
+  const feedIdsBySymbol = await getFeedIdsBySymbol(type, trackedAssets);
+  const ids = Object.values(feedIdsBySymbol).map((ref) => ref.id);
   if (ids.length === 0) {
     return [];
   }
@@ -267,9 +333,10 @@ export async function getTrackedPriceFeeds(): Promise<PriceFeed[]> {
 
   const feeds: PriceFeed[] = [];
 
-  for (const asset of TRACKED_ASSETS) {
-    const id = feedIdsBySymbol[asset.symbol];
-    if (!id) continue;
+  for (const asset of trackedAssets) {
+    const ref = feedIdsBySymbol[asset.symbol];
+    if (!ref) continue;
+    const id = ref.id;
 
     const latestEntry = latestById.get(id);
     const previousEntry = dayAgoById.get(id);
@@ -286,7 +353,7 @@ export async function getTrackedPriceFeeds(): Promise<PriceFeed[]> {
       id: slugify(asset.symbol),
       symbol: asset.symbol,
       name: asset.name,
-      tradingViewSymbol: `Crypto.${asset.symbol}`,
+      tradingViewSymbol: ref.tradingViewSymbol,
       baseSymbol: asset.symbol,
       price: Number(latest.price.toFixed(6)),
       confidence: Number(latest.confidence.toFixed(6)),

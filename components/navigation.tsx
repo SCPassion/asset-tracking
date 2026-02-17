@@ -3,8 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import type { PriceFeed } from "@/lib/price-feed-types";
@@ -61,7 +60,7 @@ function Navigation() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-200/10 glass">
-      <div className="container mx-auto flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
+      <div className="container mx-auto relative flex h-14 sm:h-16 items-center justify-center px-3 sm:px-4">
         <div className="flex items-center gap-4 sm:gap-8">
           <Link
             href="/"
@@ -87,7 +86,7 @@ function Navigation() {
                   "text-sm font-medium transition-all duration-300 relative",
                   pathname === link.href
                     ? "text-sky-200"
-                    : "text-slate-300 hover:text-sky-200"
+                    : "text-slate-200 hover:text-sky-200"
                 )}
               >
                 {link.label}
@@ -99,17 +98,7 @@ function Navigation() {
           </div>
         </div>
 
-        <div className="hidden xl:block w-full max-w-md ml-8 mr-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-            <Input
-              placeholder="Search anything..."
-              className="h-9 pl-9 pr-3 rounded-full border-slate-300/20 bg-[#08101d] text-sm"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="absolute right-3 sm:right-4 flex items-center gap-2 sm:gap-3">
           {/* Mobile menu button */}
           <button
             type="button"
@@ -125,13 +114,13 @@ function Navigation() {
         </div>
       </div>
 
-      <div className="hidden md:flex items-center justify-between border-t border-slate-300/10 px-3 sm:px-4 h-9 text-xs text-slate-300">
-        <div className="flex items-center gap-4 overflow-x-auto">
+      <div className="hidden md:flex relative items-center border-t border-slate-300/10 px-3 sm:px-4 h-9 text-xs text-slate-200">
+        <div className="flex w-full items-center justify-start gap-4 overflow-x-auto pr-28">
           {tapeFeeds.length > 0 ? (
             tapeFeeds.map((feed) => (
               <span key={feed.id} className="whitespace-nowrap">
-                <span className="text-slate-200">{feed.symbol.split("/")[0]}</span>{" "}
-                <span className="text-slate-300">${formatTickerPrice(feed.price)}</span>{" "}
+                <span className="text-slate-100">{feed.symbol.split("/")[0]}</span>{" "}
+                <span className="text-slate-200">${formatTickerPrice(feed.price)}</span>{" "}
                 <span className={feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"}>
                   {feed.change24h >= 0 ? "+" : "-"}
                   {Math.abs(feed.change24h).toFixed(1)}%
@@ -142,7 +131,7 @@ function Navigation() {
             <span className="text-slate-500">Loading tape...</span>
           )}
         </div>
-        <span className="text-slate-500">Hermes v2 Live</span>
+        <span className="absolute right-3 sm:right-4 text-slate-500">Hermes v2 Live</span>
       </div>
 
       {/* Mobile menu */}
@@ -155,7 +144,7 @@ function Navigation() {
                 href={link.href}
                 className={cn(
                   "block text-sm font-medium transition-all duration-300 hover:text-sky-200 py-2",
-                  pathname === link.href ? "text-sky-200" : "text-slate-300"
+                  pathname === link.href ? "text-sky-200" : "text-slate-200"
                 )}
                 onClick={() => setIsMenuOpen(false)}
               >
