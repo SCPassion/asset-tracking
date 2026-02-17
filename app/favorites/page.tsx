@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Star, TrendingUp, TrendingDown } from "lucide-react";
+import { FeedIcon } from "@/components/feed-icon";
 import { PriceDetailModal } from "@/components/price-detail-modal";
 import { Button } from "@/components/ui/button";
 import {
@@ -180,12 +181,15 @@ export default function FavoritesPage() {
                         </Button>
                       </TableCell>
                       <TableCell className="px-2 sm:px-4">
-                        <div>
-                          <div className="font-semibold text-sm sm:text-base">
-                            {feed.symbol}
-                          </div>
-                          <div className="text-xs sm:text-sm text-muted-foreground">
-                            {feed.name}
+                        <div className="flex items-center gap-2">
+                          <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
+                          <div>
+                            <div className="font-semibold text-sm sm:text-base">
+                              {feed.symbol}
+                            </div>
+                            <div className="text-xs sm:text-sm text-muted-foreground">
+                              {feed.name}
+                            </div>
                           </div>
                         </div>
                       </TableCell>

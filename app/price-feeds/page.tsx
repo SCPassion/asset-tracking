@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Star, TrendingDown, TrendingUp, X } from "lucide-react";
 
 import { PriceDetailModal } from "@/components/price-detail-modal";
+import { FeedIcon } from "@/components/feed-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -164,9 +165,7 @@ function DesktopFeedTable({
               >
                 <TableCell className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
-                    <div className="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center text-[10px] text-cyan-200 font-semibold">
-                      {feed.symbol.charAt(0)}
-                    </div>
+                    <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
                     <div>
                       <div className="text-sm text-slate-100 font-semibold">{feed.symbol}</div>
                       <div className="text-[11px] text-slate-300 line-clamp-1">{feed.name}</div>
@@ -269,9 +268,12 @@ function MobileFeedCards({
             }}
           >
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-100">{feed.symbol}</p>
-                <p className="text-xs text-slate-300 line-clamp-1">{feed.name}</p>
+              <div className="flex items-center gap-2">
+                <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
+                <div>
+                  <p className="text-sm font-semibold text-slate-100">{feed.symbol}</p>
+                  <p className="text-xs text-slate-300 line-clamp-1">{feed.name}</p>
+                </div>
               </div>
               <Button
                 variant="ghost"
