@@ -29,6 +29,13 @@ function formatAxisLabel(time: string, interval: HistoryInterval): string {
   return date.toLocaleDateString([], { month: "short", year: "2-digit" });
 }
 
+function formatDisplayPrice(value: number): string {
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: value >= 1 ? 2 : 6,
+  });
+}
+
 export function PriceDetailModal({
   priceFeed,
   open,
@@ -38,6 +45,7 @@ export function PriceDetailModal({
   const [history, setHistory] = useState<{ time: string; price: number }[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -94,14 +102,18 @@ export function PriceDetailModal({
     };
   }, [open, priceFeed, interval]);
 
+  useEffect(() => {
+    setHoveredIndex(null);
+  }, [interval, priceFeed?.id, open]);
+
   if (!open || !priceFeed) return null;
 
-  const chartData = history.length
-    ? history
-    : priceFeed.priceHistory.map((point) => ({
-        time: point.time,
-        price: point.price,
-      }));
+  const chartData = history;
+  const hasIntervalData = chartData.length > 0;
+  const uniqueTimes = new Set(chartData.map((point) => point.time));
+  const uniquePrices = new Set(chartData.map((point) => point.price.toString()));
+  const hasMeaningfulIntervalData =
+    chartData.length >= 2 && uniqueTimes.size >= 2 && uniquePrices.size > 1;
 
   const maxPrice = chartData.length
     ? Math.max(...chartData.map((d) => d.price))
@@ -120,7 +132,9 @@ export function PriceDetailModal({
   const startPrice = chartData[0]?.price ?? priceFeed.price;
   const endPrice = chartData[chartData.length - 1]?.price ?? priceFeed.price;
   const rangeChange =
-    startPrice > 0 ? ((endPrice - startPrice) / startPrice) * 100 : 0;
+    hasMeaningfulIntervalData && startPrice > 0
+      ? ((endPrice - startPrice) / startPrice) * 100
+      : 0;
 
   const axisLabels =
     chartData.length < 2
@@ -133,6 +147,18 @@ export function PriceDetailModal({
           ),
           formatAxisLabel(chartData[chartData.length - 1]?.time ?? "", interval),
         ];
+
+  const hoverPoint =
+    hasMeaningfulIntervalData && hoveredIndex !== null ? chartData[hoveredIndex] ?? null : null;
+
+  const hoverX =
+    hoveredIndex !== null && chartData.length > 1
+      ? (hoveredIndex / (chartData.length - 1)) * 100
+      : 0;
+  const hoverY =
+    hoverPoint && priceRange > 0
+      ? ((maxPrice - hoverPoint.price) / priceRange) * 100
+      : 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
@@ -232,14 +258,18 @@ export function PriceDetailModal({
               <div className="text-sm text-gray-300 mb-1">
                 {INTERVAL_LABELS[interval]} Change
               </div>
-              <div
-                className={`text-xl sm:text-2xl font-bold font-mono ${
-                  rangeChange >= 0 ? "text-cyan-300" : "text-red-400"
-                }`}
-              >
-                {rangeChange >= 0 ? "+" : ""}
-                {rangeChange.toFixed(2)}%
-              </div>
+              {hasMeaningfulIntervalData ? (
+                <div
+                  className={`text-xl sm:text-2xl font-bold font-mono ${
+                    rangeChange >= 0 ? "text-cyan-300" : "text-red-400"
+                  }`}
+                >
+                  {rangeChange >= 0 ? "+" : ""}
+                  {rangeChange.toFixed(2)}%
+                </div>
+              ) : (
+                <div className="text-xl sm:text-2xl font-bold font-mono text-gray-400">N/A</div>
+              )}
             </div>
           </div>
 
@@ -271,53 +301,138 @@ export function PriceDetailModal({
 
             {!loadingHistory && (
               <div className="rounded-lg border border-white/10 bg-black/20 p-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-                  <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
-                    <div className="text-[11px] text-gray-400">High</div>
-                    <div className="font-mono text-sm text-white">${maxPrice.toFixed(2)}</div>
-                  </div>
-                  <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
-                    <div className="text-[11px] text-gray-400">Low</div>
-                    <div className="font-mono text-sm text-white">${minPrice.toFixed(2)}</div>
-                  </div>
-                  <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
-                    <div className="text-[11px] text-gray-400">Start</div>
-                    <div className="font-mono text-sm text-white">${startPrice.toFixed(2)}</div>
-                  </div>
-                  <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
-                    <div className="text-[11px] text-gray-400">End</div>
-                    <div className="font-mono text-sm text-white">${endPrice.toFixed(2)}</div>
-                  </div>
-                </div>
+                {hasMeaningfulIntervalData ? (
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                      <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
+                        <div className="text-[11px] text-gray-400">High</div>
+                        <div className="font-mono text-sm text-white">${formatDisplayPrice(maxPrice)}</div>
+                      </div>
+                      <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
+                        <div className="text-[11px] text-gray-400">Low</div>
+                        <div className="font-mono text-sm text-white">${formatDisplayPrice(minPrice)}</div>
+                      </div>
+                      <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
+                        <div className="text-[11px] text-gray-400">Start</div>
+                        <div className="font-mono text-sm text-white">${formatDisplayPrice(startPrice)}</div>
+                      </div>
+                      <div className="rounded-md bg-white/5 border border-white/10 px-3 py-2">
+                        <div className="text-[11px] text-gray-400">End</div>
+                        <div className="font-mono text-sm text-white">${formatDisplayPrice(endPrice)}</div>
+                      </div>
+                    </div>
 
-                <div className="relative h-56">
-                  <svg
-                    className="w-full h-full"
-                    preserveAspectRatio="none"
-                    viewBox="0 0 100 100"
-                  >
-                    <defs>
-                      <linearGradient id="history-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#38bdf8" />
-                        <stop offset="50%" stopColor="#22d3ee" />
-                        <stop offset="100%" stopColor="#fbbf24" />
-                      </linearGradient>
-                    </defs>
-                    <polyline
-                      fill="none"
-                      stroke="url(#history-line-gradient)"
-                      strokeWidth="2"
-                      points={points.join(" ")}
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </svg>
-                </div>
+                    <div className="h-56 rounded-md border border-white/5 bg-black/10 p-2">
+                      <div className="flex h-full gap-2">
+                        <div className="relative w-14 shrink-0 border-r border-white/10 text-[11px] font-mono text-gray-500">
+                          <span className="absolute right-2 top-0 -translate-y-1/2">
+                            ${formatDisplayPrice(maxPrice)}
+                          </span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2">
+                            ${formatDisplayPrice((maxPrice + minPrice) / 2)}
+                          </span>
+                          <span className="absolute right-2 bottom-0 translate-y-1/2">
+                            ${formatDisplayPrice(minPrice)}
+                          </span>
+                        </div>
 
-                <div className="mt-3 flex items-center justify-between text-[11px] text-gray-500 font-mono">
-                  <span>{axisLabels[0]}</span>
-                  <span>{axisLabels[1]}</span>
-                  <span>{axisLabels[2]}</span>
-                </div>
+                        <div className="relative min-w-0 flex-1">
+                          {hoverPoint && (
+                            <div
+                              className="pointer-events-none absolute z-20 rounded-md border border-sky-300/40 bg-[#07101e]/95 px-2 py-1 text-[11px] text-slate-100 shadow-lg shadow-black/30 transition-opacity duration-150"
+                              style={{
+                                left: `${hoverX}%`,
+                                top: `${Math.max(hoverY - 8, 4)}%`,
+                                transform: "translate(-50%, -100%)",
+                              }}
+                            >
+                              <div className="font-mono tabular-nums">${formatDisplayPrice(hoverPoint.price)}</div>
+                              <div className="text-slate-300">{formatAxisLabel(hoverPoint.time, interval)}</div>
+                            </div>
+                          )}
+                          {hoverPoint && (
+                            <>
+                              <div
+                                className="pointer-events-none absolute z-10 h-4 w-4 rounded-full border border-cyan-300/80 bg-cyan-300/20"
+                                style={{
+                                  left: `${hoverX}%`,
+                                  top: `${hoverY}%`,
+                                  transform: "translate(-50%, -50%)",
+                                }}
+                              />
+                              <div
+                                className="pointer-events-none absolute z-10 h-2.5 w-2.5 rounded-full border border-cyan-100 bg-cyan-300"
+                                style={{
+                                  left: `${hoverX}%`,
+                                  top: `${hoverY}%`,
+                                  transform: "translate(-50%, -50%)",
+                                }}
+                              />
+                            </>
+                          )}
+
+                          <svg
+                            className="h-full w-full cursor-crosshair touch-none"
+                            preserveAspectRatio="none"
+                            viewBox="0 0 100 100"
+                            onPointerMove={(event) => {
+                              const rect = event.currentTarget.getBoundingClientRect();
+                              if (rect.width <= 0 || chartData.length < 1) return;
+                              const rawX = event.clientX - rect.left;
+                              const clampedX = Math.min(Math.max(rawX, 0), rect.width);
+                              const ratio = clampedX / rect.width;
+                              const index = Math.round(ratio * Math.max(chartData.length - 1, 0));
+                              setHoveredIndex(index);
+                            }}
+                            onPointerLeave={() => setHoveredIndex(null)}
+                          >
+                            <defs>
+                              <linearGradient id="history-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#38bdf8" />
+                                <stop offset="50%" stopColor="#22d3ee" />
+                                <stop offset="100%" stopColor="#fbbf24" />
+                              </linearGradient>
+                            </defs>
+                            {hoverPoint && (
+                              <line
+                                x1={hoverX}
+                                x2={hoverX}
+                                y1="0"
+                                y2="100"
+                                stroke="#67e8f9"
+                                strokeOpacity="0.25"
+                                strokeDasharray="1.2 1.2"
+                                vectorEffect="non-scaling-stroke"
+                              />
+                            )}
+                            <polyline
+                              fill="none"
+                              stroke="url(#history-line-gradient)"
+                              strokeWidth="2"
+                              points={points.join(" ")}
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between text-[11px] text-gray-500 font-mono">
+                      <span>{axisLabels[0]}</span>
+                      <span>{axisLabels[1]}</span>
+                      <span>{axisLabels[2]}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-lg border border-amber-300/20 bg-amber-400/10 px-4 py-6 text-center">
+                    <p className="text-sm text-amber-200">
+                      Not enough interval data for {INTERVAL_LABELS[interval]} to draw a reliable curve.
+                    </p>
+                    <p className="mt-1 text-xs text-amber-100/80">
+                      Try another time interval to view available history.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
