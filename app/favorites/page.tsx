@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Star, TrendingUp, TrendingDown } from "lucide-react";
+import Link from "next/link";
+import { CircleHelp, Star, TrendingDown, TrendingUp } from "lucide-react";
 import { FeedIcon } from "@/components/feed-icon";
 import { PriceDetailModal } from "@/components/price-detail-modal";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,27 @@ function formatPrice(value: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: maxFractionDigits,
   });
+}
+
+function ConfidenceHelpTooltip() {
+  return (
+    <span className="relative inline-flex items-center gap-1.5 group/tooltip">
+      <span>Confidence</span>
+      <button
+        type="button"
+        aria-label="About confidence score"
+        className="text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50 rounded-sm transition-colors duration-150"
+      >
+        <CircleHelp className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-20 w-56 rounded-md border border-slate-200/15 bg-[#0a1220]/95 px-2.5 py-2 text-[11px] normal-case tracking-normal leading-relaxed text-slate-200 opacity-0 shadow-lg shadow-black/40 transition-opacity duration-150 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100"
+      >
+        Price feed reliability score based on source quality and update frequency.
+      </span>
+    </span>
+  );
 }
 
 export default function FavoritesPage() {
@@ -144,7 +166,7 @@ export default function FavoritesPage() {
                 <button
                   key={feed.id}
                   type="button"
-                  className="glass rounded-xl border border-white/10 p-3 text-left"
+                  className="glass rounded-xl border border-white/10 bg-white/5 p-3 text-left shadow-lg shadow-black/20 transition-colors duration-150 hover:bg-white/5"
                   onClick={() => setSelectedPriceFeed(feed)}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -170,11 +192,11 @@ export default function FavoritesPage() {
                     </Button>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
-                    <p className="font-mono text-sm font-semibold text-slate-100">
+                    <p className="font-mono tabular-nums text-sm font-semibold text-slate-100">
                       ${formatPrice(feed.price)}
                     </p>
                     <p
-                      className={`text-xs font-semibold ${
+                      className={`font-mono tabular-nums text-xs font-semibold ${
                         feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
                       }`}
                     >
@@ -182,14 +204,14 @@ export default function FavoritesPage() {
                       {Math.abs(feed.change24h).toFixed(2)}%
                     </p>
                   </div>
-                  <p className="mt-1 text-right font-mono text-[11px] text-muted-foreground">
+                  <p className="mt-1 text-right font-mono tabular-nums text-[11px] text-muted-foreground">
                     ±${formatPrice(feed.confidence)}
                   </p>
                 </button>
               ))}
             </div>
 
-            <div className="hidden md:block glass rounded-2xl border border-white/10 overflow-hidden">
+            <div className="hidden md:block glass rounded-2xl border border-white/10 bg-white/5 shadow-lg shadow-black/20 overflow-hidden">
               <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -202,7 +224,7 @@ export default function FavoritesPage() {
                       Price
                     </TableHead>
                     <TableHead className="font-semibold text-right text-xs sm:text-sm hidden sm:table-cell">
-                      Confidence
+                      <ConfidenceHelpTooltip />
                     </TableHead>
                     <TableHead className="font-semibold text-right text-xs sm:text-sm">
                       24h Change
@@ -214,7 +236,7 @@ export default function FavoritesPage() {
                   {favoriteFeeds.map((feed, index) => (
                     <TableRow
                       key={feed.id}
-                      className="border-border/40 hover:bg-secondary/30 cursor-pointer transition-colors animate-fade-up"
+                      className="border-border/40 hover:bg-white/5 cursor-pointer transition-colors duration-150 animate-fade-up"
                       onClick={() => setSelectedPriceFeed(feed)}
                       style={{ animationDelay: `${Math.min(index * 40, 280)}ms` }}
                     >
@@ -231,28 +253,28 @@ export default function FavoritesPage() {
                           <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-amber-300 text-amber-300" />
                         </Button>
                       </TableCell>
-                      <TableCell className="px-2 sm:px-4">
+                      <TableCell className="px-2 sm:px-4 py-1.5 sm:py-2">
                         <div className="flex items-center gap-2">
                           <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
                           <div>
-                            <div className="font-semibold text-sm sm:text-base">
+                            <div className="font-semibold text-sm sm:text-base leading-tight">
                               {feed.symbol}
                             </div>
-                            <div className="text-xs sm:text-sm text-muted-foreground">
+                            <div className="text-xs sm:text-sm leading-tight text-muted-foreground">
                               {feed.name}
                             </div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-mono font-semibold text-sm sm:text-base px-2 sm:px-4">
+                      <TableCell className="text-right font-mono tabular-nums font-semibold text-sm sm:text-base px-2 sm:px-4 py-1.5 sm:py-2">
                         ${formatPrice(feed.price)}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-muted-foreground text-xs sm:text-sm px-2 sm:px-4 hidden sm:table-cell">
+                      <TableCell className="text-right font-mono tabular-nums text-muted-foreground text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 hidden sm:table-cell">
                         ±${formatPrice(feed.confidence)}
                       </TableCell>
-                      <TableCell className="text-right px-2 sm:px-4">
+                      <TableCell className="text-right px-2 sm:px-4 py-1.5 sm:py-2">
                         <div
-                          className={`inline-flex items-center gap-1 font-semibold text-xs sm:text-sm ${
+                          className={`inline-flex items-center gap-1 font-mono tabular-nums font-semibold text-xs sm:text-sm ${
                             feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
                           }`}
                         >
@@ -285,12 +307,14 @@ export default function FavoritesPage() {
                 ? "Pulling live feed data from Pyth."
                 : "Star your favorite price feeds to see them here for quick access"}
             </p>
-            <Button
-              variant="outline"
-              className="border-sky-300/40 text-sky-200 hover:bg-sky-500/20 bg-transparent"
-            >
-              Browse Price Feeds
-            </Button>
+            <Link href="/price-feeds">
+              <Button
+                variant="outline"
+                className="border-sky-300/40 text-sky-200 hover:bg-sky-500/20 bg-transparent"
+              >
+                Browse Price Feeds
+              </Button>
+            </Link>
           </div>
         )}
       </div>

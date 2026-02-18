@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, Star, TrendingDown, TrendingUp, X } from "lucide-react";
+import { CircleHelp, Search, Star, TrendingDown, TrendingUp, X } from "lucide-react";
 
 import { PriceDetailModal } from "@/components/price-detail-modal";
 import { FeedIcon } from "@/components/feed-icon";
@@ -29,6 +29,7 @@ interface PriceFeedApiResponse {
 
 const QUICK_SEARCHES = ["BTC", "ETH", "SOL", "AAPL", "XAU", "BTC/ETH"];
 type TrackedFeedType = "crypto" | "equity" | "fx";
+type UpdateDirection = "up" | "down";
 
 function formatPrice(value: number): string {
   const maxFractionDigits = value >= 1 ? 2 : 6;
@@ -44,6 +45,9 @@ function useTrackedFeeds(type: TrackedFeedType) {
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<number | null>(null);
   const [updatingFeedIds, setUpdatingFeedIds] = useState<Set<string>>(new Set());
+  const [updateDirectionByFeedId, setUpdateDirectionByFeedId] = useState<Map<string, UpdateDirection>>(
+    new Map()
+  );
   const previousFeedsRef = useRef<Map<string, PriceFeed>>(new Map());
   const clearEffectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -75,17 +79,26 @@ function useTrackedFeeds(type: TrackedFeedType) {
               );
             })
             .map((feed) => feed.id);
+          const changedDirectionEntries = nextFeeds
+            .map((feed) => {
+              const previous = previousFeedsRef.current.get(feed.id);
+              if (!previous || previous.price === feed.price) return null;
+              return [feed.id, feed.price > previous.price ? "up" : "down"] as const;
+            })
+            .filter((entry): entry is readonly [string, UpdateDirection] => entry !== null);
 
           setFeeds(nextFeeds);
           previousFeedsRef.current = new Map(nextFeeds.map((feed) => [feed.id, feed]));
 
           if (changedIds.length > 0) {
             setUpdatingFeedIds(new Set(changedIds));
+            setUpdateDirectionByFeedId(new Map(changedDirectionEntries));
             if (clearEffectTimeoutRef.current) {
               clearTimeout(clearEffectTimeoutRef.current);
             }
             clearEffectTimeoutRef.current = setTimeout(() => {
               setUpdatingFeedIds(new Set());
+              setUpdateDirectionByFeedId(new Map());
             }, 450);
           }
 
@@ -116,24 +129,47 @@ function useTrackedFeeds(type: TrackedFeedType) {
     };
   }, [type]);
 
-  return { feeds, loading, error, lastRefreshedAt, updatingFeedIds };
+  return { feeds, loading, error, lastRefreshedAt, updatingFeedIds, updateDirectionByFeedId };
+}
+
+function ConfidenceHelpTooltip() {
+  return (
+    <span className="relative inline-flex items-center gap-1.5 group/tooltip">
+      <span>Confidence</span>
+      <button
+        type="button"
+        aria-label="About confidence score"
+        className="text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50 rounded-sm transition-colors duration-150"
+      >
+        <CircleHelp className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-20 w-56 rounded-md border border-slate-200/15 bg-[#0a1220]/95 px-2.5 py-2 text-[11px] normal-case tracking-normal leading-relaxed text-slate-200 opacity-0 shadow-lg shadow-black/40 transition-opacity duration-150 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100"
+      >
+        Price feed reliability score based on source quality and update frequency.
+      </span>
+    </span>
+  );
 }
 
 const DesktopFeedTable = memo(function DesktopFeedTable({
   feeds,
   favorites,
   updatingFeedIds,
+  updateDirectionByFeedId,
   onToggleFavorite,
   onSelect,
 }: {
   feeds: PriceFeed[];
   favorites: Set<string>;
   updatingFeedIds?: Set<string>;
+  updateDirectionByFeedId?: Map<string, UpdateDirection>;
   onToggleFavorite: (symbol: string) => void;
   onSelect: (feed: PriceFeed) => void;
 }) {
   return (
-    <div className="hidden md:block overflow-x-auto">
+    <div className="hidden md:block overflow-x-hidden">
       <Table>
         <TableHeader>
           <TableRow className="border-b border-slate-300/10 bg-[#060d19]">
@@ -147,7 +183,7 @@ const DesktopFeedTable = memo(function DesktopFeedTable({
               24h
             </TableHead>
             <TableHead className="px-4 py-2.5 text-sm font-medium tracking-wide text-slate-300 uppercase text-right">
-              Confidence
+              <ConfidenceHelpTooltip />
             </TableHead>
             <TableHead className="px-4 py-2.5 text-sm font-medium tracking-wide text-slate-300 uppercase text-right">
               Fav
@@ -160,29 +196,35 @@ const DesktopFeedTable = memo(function DesktopFeedTable({
             return (
               <TableRow
                 key={feed.id}
-                className="cursor-pointer border-b border-slate-300/10 hover:bg-slate-900/50"
+                className="cursor-pointer border-b border-slate-300/10 hover:bg-white/5 transition-colors duration-150"
                 onClick={() => onSelect(feed)}
               >
-                <TableCell className="px-4 py-2.5">
+                <TableCell className="px-4 py-2">
                   <div className="flex items-center gap-2">
                     <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
                     <div>
-                      <div className="text-base leading-snug text-slate-100 font-semibold">{feed.symbol}</div>
-                      <div className="text-sm leading-snug text-slate-300 line-clamp-1">{feed.name}</div>
+                      <div className="text-base leading-tight text-slate-100 font-semibold">{feed.symbol}</div>
+                      <div className="text-sm leading-tight text-slate-300 line-clamp-1">{feed.name}</div>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="px-4 py-3 text-right font-mono text-base leading-snug text-slate-100">
+                <TableCell className="px-4 py-2.5 text-right font-mono tabular-nums text-base leading-tight text-slate-100">
                   <span
-                    className={`inline-block transition-[filter] duration-300 ${
+                    className={`inline-block rounded px-1 transition-[filter,background-color] duration-300 motion-reduce:transition-none ${
                       updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
+                    } ${
+                      updatingFeedIds?.has(feed.id) && updateDirectionByFeedId?.get(feed.id) === "up"
+                        ? "bg-emerald-400/15"
+                        : updatingFeedIds?.has(feed.id) && updateDirectionByFeedId?.get(feed.id) === "down"
+                        ? "bg-red-400/15"
+                        : ""
                     }`}
                   >
                     ${formatPrice(feed.price)}
                   </span>
                 </TableCell>
                 <TableCell
-                  className={`px-4 py-3 text-right font-mono text-sm leading-snug font-semibold ${
+                  className={`px-4 py-2.5 text-right font-mono tabular-nums text-sm leading-tight font-semibold ${
                     feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
                   }`}
                 >
@@ -199,7 +241,7 @@ const DesktopFeedTable = memo(function DesktopFeedTable({
                     {Math.abs(feed.change24h).toFixed(2)}%
                   </span>
                 </TableCell>
-                <TableCell className="px-4 py-3 text-right font-mono text-sm leading-snug text-slate-300">
+                <TableCell className="px-4 py-2.5 text-right font-mono tabular-nums text-sm leading-tight text-slate-300">
                   <span
                     className={`inline-block transition-[filter] duration-300 ${
                       updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
@@ -208,7 +250,7 @@ const DesktopFeedTable = memo(function DesktopFeedTable({
                     ±${formatPrice(feed.confidence)}
                   </span>
                 </TableCell>
-                <TableCell className="px-4 py-2.5 text-right">
+                <TableCell className="px-4 py-2 text-right">
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -258,7 +300,7 @@ const MobileFeedCards = memo(function MobileFeedCards({
             key={feed.id}
             role="button"
             tabIndex={0}
-            className="rounded-xl border border-slate-300/10 bg-[#08101d] p-3 text-left"
+            className="rounded-xl border border-slate-300/10 bg-[#08101d] p-3 text-left transition-colors duration-150 hover:bg-white/5"
             onClick={() => onSelect(feed)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
@@ -295,14 +337,14 @@ const MobileFeedCards = memo(function MobileFeedCards({
             </div>
             <div className="mt-2 flex items-center justify-between">
               <p
-                className={`font-mono text-base leading-snug text-slate-100 transition-[filter] duration-300 ${
+                className={`font-mono tabular-nums text-base leading-tight text-slate-100 transition-[filter] duration-300 ${
                   updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
                 }`}
               >
                 ${formatPrice(feed.price)}
               </p>
               <p
-                className={`text-sm leading-snug font-semibold transition-[filter] duration-300 ${
+                className={`font-mono tabular-nums text-sm leading-tight font-semibold transition-[filter] duration-300 ${
                   updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
                 } ${
                   feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
@@ -313,7 +355,7 @@ const MobileFeedCards = memo(function MobileFeedCards({
               </p>
             </div>
             <p
-              className={`mt-1 text-right font-mono text-xs leading-snug text-slate-300 transition-[filter] duration-300 ${
+              className={`mt-1 text-right font-mono tabular-nums text-xs leading-tight text-slate-300 transition-[filter] duration-300 ${
                 updatingFeedIds?.has(feed.id) ? "blur-[2px]" : "blur-0"
               }`}
             >
@@ -336,6 +378,7 @@ const FeedPanel = memo(function FeedPanel({
   lastRefreshedAt,
   favorites,
   updatingFeedIds,
+  updateDirectionByFeedId,
   onToggleFavorite,
   onSelect,
 }: {
@@ -348,12 +391,13 @@ const FeedPanel = memo(function FeedPanel({
   lastRefreshedAt?: number | null;
   favorites: Set<string>;
   updatingFeedIds?: Set<string>;
+  updateDirectionByFeedId?: Map<string, UpdateDirection>;
   onToggleFavorite: (symbol: string) => void;
   onSelect: (feed: PriceFeed) => void;
 }) {
   return (
     <section
-      className={`glass rounded-2xl border border-slate-300/15 overflow-hidden ${className ?? ""}`}
+      className={`glass rounded-2xl border border-white/10 bg-white/5 shadow-lg shadow-black/20 overflow-hidden ${className ?? ""}`}
     >
       <div className="flex items-center justify-between gap-3 border-b border-slate-300/10 bg-[#060d19] px-3 py-2 sm:px-4">
         <div>
@@ -385,6 +429,7 @@ const FeedPanel = memo(function FeedPanel({
             feeds={feeds}
             favorites={favorites}
             updatingFeedIds={updatingFeedIds}
+            updateDirectionByFeedId={updateDirectionByFeedId}
             onToggleFavorite={onToggleFavorite}
             onSelect={onSelect}
           />
@@ -608,6 +653,7 @@ export default function PriceFeedsPage() {
             lastRefreshedAt={cryptoFeeds.lastRefreshedAt}
             favorites={favorites}
             updatingFeedIds={cryptoFeeds.updatingFeedIds}
+            updateDirectionByFeedId={cryptoFeeds.updateDirectionByFeedId}
             onToggleFavorite={toggleFavorite}
             onSelect={setSelectedPriceFeed}
           />
@@ -621,6 +667,7 @@ export default function PriceFeedsPage() {
             lastRefreshedAt={equityFeeds.lastRefreshedAt}
             favorites={favorites}
             updatingFeedIds={equityFeeds.updatingFeedIds}
+            updateDirectionByFeedId={equityFeeds.updateDirectionByFeedId}
             onToggleFavorite={toggleFavorite}
             onSelect={setSelectedPriceFeed}
           />
@@ -634,6 +681,7 @@ export default function PriceFeedsPage() {
             lastRefreshedAt={fxFeeds.lastRefreshedAt}
             favorites={favorites}
             updatingFeedIds={fxFeeds.updatingFeedIds}
+            updateDirectionByFeedId={fxFeeds.updateDirectionByFeedId}
             onToggleFavorite={toggleFavorite}
             onSelect={setSelectedPriceFeed}
           />

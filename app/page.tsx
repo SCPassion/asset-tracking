@@ -28,8 +28,8 @@ export default function HomePage() {
         </div>
 
         <p className="text-base sm:text-lg md:text-xl text-slate-300 mb-8 sm:mb-12 max-w-3xl mx-auto text-balance px-4">
-          Real-time asset monitoring with advanced analytics for DeFi protocols
-          and blockchain infrastructure.
+          Real-time asset monitoring with advanced analytics across crypto,
+          equities, FX, and broader global markets.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">

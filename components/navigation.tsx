@@ -194,12 +194,12 @@ function Navigation() {
       </div>
 
       {tapeFeeds.length > 0 && (
-        <div className="hidden md:flex relative items-center border-t border-slate-300/10 px-3 sm:px-4 h-9 text-xs text-slate-200">
+        <div className="hidden md:flex relative items-center border-t border-b border-slate-300/15 px-3 sm:px-4 h-9 text-xs text-slate-100/90">
           <div className="flex w-full items-center justify-start gap-4 overflow-x-auto pr-28">
             {tapeFeeds.map((feed) => (
-              <span key={feed.id} className="whitespace-nowrap">
-                <span className="text-slate-100">{feed.symbol.split("/")[0]}</span>{" "}
-                <span className="text-slate-200">${formatTickerPrice(feed.price)}</span>{" "}
+              <span key={feed.id} className="whitespace-nowrap font-mono tabular-nums">
+                <span className="font-sans text-slate-50">{feed.symbol.split("/")[0]}</span>{" "}
+                <span className="text-slate-100">${formatTickerPrice(feed.price)}</span>{" "}
                 <span className={feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"}>
                   {feed.change24h >= 0 ? "+" : "-"}
                   {Math.abs(feed.change24h).toFixed(1)}%
@@ -207,7 +207,7 @@ function Navigation() {
               </span>
             ))}
           </div>
-          <span className="absolute right-3 sm:right-4 text-slate-500">Hermes v2 Live</span>
+          <span className="absolute right-3 sm:right-4 text-slate-400">Hermes v2 Live</span>
         </div>
       )}
 
