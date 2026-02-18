@@ -6,7 +6,12 @@ export const revalidate = 30;
 export const dynamic = "force-dynamic";
 
 function normalizeType(value: string | null): TrackedAssetType {
-  if (value === "equity" || value === "fx" || value === "crypto") {
+  if (
+    value === "equity" ||
+    value === "fx" ||
+    value === "crypto" ||
+    value === "crypto-redemption-rate"
+  ) {
     return value;
   }
   return "crypto";

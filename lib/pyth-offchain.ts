@@ -3,7 +3,7 @@ import { PriceFeed } from "@/lib/price-feed-types";
 const HERMES_BASE = "https://hermes.pyth.network";
 const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
 
-export type TrackedAssetType = "crypto" | "equity" | "fx";
+export type TrackedAssetType = "crypto" | "equity" | "fx" | "crypto-redemption-rate";
 
 type TrackedAsset = {
   symbol: string;
@@ -13,9 +13,9 @@ type TrackedAsset = {
 
 const TRACKED_ASSETS_BY_TYPE: Record<TrackedAssetType, readonly TrackedAsset[]> = {
   crypto: [
+    { symbol: "SOL/USD", name: "Solana", assetType: "crypto" },
     { symbol: "BTC/USD", name: "Bitcoin", assetType: "crypto" },
     { symbol: "ETH/USD", name: "Ethereum", assetType: "crypto" },
-    { symbol: "SOL/USD", name: "Solana", assetType: "crypto" },
     { symbol: "PYTH/USD", name: "Pyth Network", assetType: "crypto" },
     { symbol: "FOGO/USD", name: "Fogo", assetType: "crypto" },
     { symbol: "JUP/USD", name: "Jupiter", assetType: "crypto" },
@@ -35,6 +35,14 @@ const TRACKED_ASSETS_BY_TYPE: Record<TrackedAssetType, readonly TrackedAsset[]> 
     { symbol: "AUD/USD", name: "Australian Dollar / US Dollar", assetType: "fx" },
     { symbol: "USD/CAD", name: "US Dollar / Canadian Dollar", assetType: "fx" },
     { symbol: "USD/CHF", name: "US Dollar / Swiss Franc", assetType: "fx" },
+  ],
+  "crypto-redemption-rate": [
+    { symbol: "mSOL/SOL", name: "Marinade Staked SOL / Solana", assetType: "crypto-redemption-rate" },
+    { symbol: "jitoSOL/SOL", name: "Jito Staked SOL / Solana", assetType: "crypto-redemption-rate" },
+    { symbol: "stETH/ETH", name: "Lido Staked Ether / Ether", assetType: "crypto-redemption-rate" },
+    { symbol: "wstETH/stETH", name: "Wrapped stETH / stETH", assetType: "crypto-redemption-rate" },
+    { symbol: "rETH/ETH", name: "Rocket Pool Ether / Ether", assetType: "crypto-redemption-rate" },
+    { symbol: "ezETH/ETH", name: "Renzo Restaked ETH / Ether", assetType: "crypto-redemption-rate" },
   ],
 };
 
@@ -236,7 +244,10 @@ async function discoverFeedReference(
   symbol: string,
   assetType: TrackedAssetType
 ): Promise<TrackedFeedReference | null> {
-  const params = new URLSearchParams({ query: symbol, asset_type: assetType });
+  const params = new URLSearchParams({ query: symbol });
+  if (assetType !== "crypto-redemption-rate") {
+    params.set("asset_type", assetType);
+  }
   const url = `${HERMES_BASE}/v2/price_feeds?${params.toString()}`;
   const feeds = await fetchWithRetry<HermesDiscovery[]>(url);
 

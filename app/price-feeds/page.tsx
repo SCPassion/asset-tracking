@@ -28,7 +28,7 @@ interface PriceFeedApiResponse {
 }
 
 const QUICK_SEARCHES = ["BTC", "ETH", "SOL", "AAPL", "XAU", "BTC/ETH"];
-type TrackedFeedType = "crypto" | "equity" | "fx";
+type TrackedFeedType = "crypto" | "equity" | "fx" | "crypto-redemption-rate";
 type UpdateDirection = "up" | "down";
 
 function formatPrice(value: number): string {
@@ -451,6 +451,7 @@ export default function PriceFeedsPage() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [favoritesReady, setFavoritesReady] = useState(false);
   const cryptoFeeds = useTrackedFeeds("crypto");
+  const cryptoRedemptionRateFeeds = useTrackedFeeds("crypto-redemption-rate");
   const equityFeeds = useTrackedFeeds("equity");
   const fxFeeds = useTrackedFeeds("fx");
 
@@ -646,7 +647,6 @@ export default function PriceFeedsPage() {
           <FeedPanel
             title="Suggested Crypto Feeds"
             subtitle="High-traffic USD feeds updated every 15 seconds."
-            className="xl:col-span-2"
             feeds={cryptoFeeds.feeds}
             loading={cryptoFeeds.loading}
             error={cryptoFeeds.error}
@@ -654,6 +654,20 @@ export default function PriceFeedsPage() {
             favorites={favorites}
             updatingFeedIds={cryptoFeeds.updatingFeedIds}
             updateDirectionByFeedId={cryptoFeeds.updateDirectionByFeedId}
+            onToggleFavorite={toggleFavorite}
+            onSelect={setSelectedPriceFeed}
+          />
+
+          <FeedPanel
+            title="Suggested Crypto Redemption Rates"
+            subtitle="Wrapped and staked token redemption ratios updated every 15 seconds."
+            feeds={cryptoRedemptionRateFeeds.feeds}
+            loading={cryptoRedemptionRateFeeds.loading}
+            error={cryptoRedemptionRateFeeds.error}
+            lastRefreshedAt={cryptoRedemptionRateFeeds.lastRefreshedAt}
+            favorites={favorites}
+            updatingFeedIds={cryptoRedemptionRateFeeds.updatingFeedIds}
+            updateDirectionByFeedId={cryptoRedemptionRateFeeds.updateDirectionByFeedId}
             onToggleFavorite={toggleFavorite}
             onSelect={setSelectedPriceFeed}
           />
