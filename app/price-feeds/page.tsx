@@ -118,7 +118,7 @@ function useTrackedFeeds(type: TrackedFeedType) {
     };
 
     load();
-    const interval = setInterval(load, 15_000);
+    const interval = setInterval(load, 5_000);
 
     return () => {
       canceled = true;
@@ -646,7 +646,7 @@ export default function PriceFeedsPage() {
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
           <FeedPanel
             title="Suggested Crypto Feeds"
-            subtitle="High-traffic USD feeds updated every 15 seconds."
+            subtitle="High-traffic USD feeds updated every 5 seconds."
             feeds={cryptoFeeds.feeds}
             loading={cryptoFeeds.loading}
             error={cryptoFeeds.error}
@@ -660,7 +660,7 @@ export default function PriceFeedsPage() {
 
           <FeedPanel
             title="Suggested Crypto Redemption Rates"
-            subtitle="Wrapped and staked token redemption ratios updated every 15 seconds."
+            subtitle="Wrapped and staked token redemption ratios updated every 5 seconds."
             feeds={cryptoRedemptionRateFeeds.feeds}
             loading={cryptoRedemptionRateFeeds.loading}
             error={cryptoRedemptionRateFeeds.error}
@@ -674,7 +674,7 @@ export default function PriceFeedsPage() {
 
           <FeedPanel
             title="Suggested Equity Feeds"
-            subtitle="Major US equities updated every 15 seconds."
+            subtitle="Major US equities updated every 5 seconds."
             feeds={equityFeeds.feeds}
             loading={equityFeeds.loading}
             error={equityFeeds.error}
@@ -688,7 +688,7 @@ export default function PriceFeedsPage() {
 
           <FeedPanel
             title="Suggested FX Feeds"
-            subtitle="Top FX pairs updated every 15 seconds."
+            subtitle="Top FX pairs updated every 5 seconds."
             feeds={fxFeeds.feeds}
             loading={fxFeeds.loading}
             error={fxFeeds.error}
