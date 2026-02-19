@@ -1,0 +1,16 @@
+export const dataProviders = [
+  "Coinbase",
+  "Binance",
+  "Jane Street",
+  "Cboe",
+  "LMAX",
+  "Circle",
+  "OKX",
+  "Susquehanna",
+  "Two Sigma",
+  "Virtu Financial",
+  "Jupiter",
+  "Kraken",
+  "Bitstamp",
+  "Gemini",
+];

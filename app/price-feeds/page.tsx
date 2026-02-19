@@ -588,40 +588,74 @@ export default function PriceFeedsPage() {
                     )}
                     {!searchLoading &&
                       !searchError &&
-                      limitedSearchResults.map((feed) => (
-                        <button
-                          key={feed.id}
-                          type="button"
-                          className="flex w-full items-center justify-between gap-3 border-b border-slate-300/10 px-3 py-2.5 text-left last:border-b-0 hover:bg-slate-800/60"
-                          onClick={() => {
-                            setSelectedPriceFeed(feed);
-                            clearSearch();
-                          }}
-                        >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
-                            <span className="min-w-0">
-                              <span className="block truncate text-base font-semibold leading-snug text-slate-100">
-                                {feed.symbol}
+                      limitedSearchResults.map((feed) => {
+                        const favoriteKey = favoriteKeyForFeed(feed);
+                        return (
+                          <div
+                            key={feed.id}
+                            role="button"
+                            tabIndex={0}
+                            className="flex w-full items-center justify-between gap-3 border-b border-slate-300/10 px-3 py-2.5 text-left last:border-b-0 hover:bg-slate-800/60"
+                            onClick={() => {
+                              setSelectedPriceFeed(feed);
+                              clearSearch();
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                setSelectedPriceFeed(feed);
+                                clearSearch();
+                              }
+                            }}
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <FeedIcon symbol={feed.symbol} className="h-8 w-8" />
+                              <span className="min-w-0">
+                                <span className="block truncate text-base font-semibold leading-snug text-slate-100">
+                                  {feed.symbol}
+                                </span>
+                                <span className="block truncate text-sm leading-snug text-slate-300">{feed.name}</span>
                               </span>
-                              <span className="block truncate text-sm leading-snug text-slate-300">{feed.name}</span>
                             </span>
-                          </span>
-                          <span className="text-right">
-                            <span className="block font-mono text-base leading-snug text-slate-100">
-                              ${formatPrice(feed.price)}
+                            <span className="flex items-center gap-3">
+                              <span className="text-right">
+                                <span className="block font-mono text-base leading-snug text-slate-100">
+                                  ${formatPrice(feed.price)}
+                                </span>
+                                <span
+                                  className={`block text-sm leading-snug font-semibold ${
+                                    feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
+                                  }`}
+                                >
+                                  {feed.change24h >= 0 ? "+" : "-"}
+                                  {Math.abs(feed.change24h).toFixed(2)}%
+                                </span>
+                              </span>
+                              <button
+                                type="button"
+                                aria-label={
+                                  favorites.has(favoriteKey)
+                                    ? `Remove ${feed.symbol} from favorites`
+                                    : `Add ${feed.symbol} to favorites`
+                                }
+                                className="rounded-md p-1.5 hover:bg-amber-300/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleFavorite(favoriteKey);
+                                }}
+                              >
+                                <Star
+                                  className={`h-4 w-4 ${
+                                    favorites.has(favoriteKey)
+                                      ? "fill-amber-300 text-amber-300"
+                                      : "text-slate-500"
+                                  }`}
+                                />
+                              </button>
                             </span>
-                            <span
-                              className={`block text-sm leading-snug font-semibold ${
-                                feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
-                              }`}
-                            >
-                              {feed.change24h >= 0 ? "+" : "-"}
-                              {Math.abs(feed.change24h).toFixed(2)}%
-                            </span>
-                          </span>
-                        </button>
-                      ))}
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               )}
@@ -706,6 +740,13 @@ export default function PriceFeedsPage() {
         priceFeed={selectedPriceFeed}
         open={!!selectedPriceFeed}
         onClose={() => setSelectedPriceFeed(null)}
+        isFavorite={
+          selectedPriceFeed ? favorites.has(favoriteKeyForFeed(selectedPriceFeed)) : false
+        }
+        onToggleFavorite={() => {
+          if (!selectedPriceFeed) return;
+          toggleFavorite(favoriteKeyForFeed(selectedPriceFeed));
+        }}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { dataProviders } from "@/lib/mock-price-data";
+import { dataProviders } from "@/lib/data-providers";
 
 export function ScrollingFooter() {
   // Duplicate the providers array to create seamless loop

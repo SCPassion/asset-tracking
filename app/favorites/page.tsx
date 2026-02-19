@@ -323,6 +323,13 @@ export default function FavoritesPage() {
         priceFeed={selectedPriceFeed}
         open={!!selectedPriceFeed}
         onClose={() => setSelectedPriceFeed(null)}
+        isFavorite={
+          selectedPriceFeed ? favorites.has(favoriteKeyForFeed(selectedPriceFeed)) : false
+        }
+        onToggleFavorite={() => {
+          if (!selectedPriceFeed) return;
+          toggleFavorite(favoriteKeyForFeed(selectedPriceFeed));
+        }}
       />
     </div>
   );

@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { PriceFeed } from "@/lib/price-feed-types";
 
 interface PriceDetailModalProps {
   priceFeed: PriceFeed | null;
   open: boolean;
   onClose: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 }
 
 type HistoryInterval = "24h" | "7d" | "1m" | "1y";
@@ -40,6 +44,8 @@ export function PriceDetailModal({
   priceFeed,
   open,
   onClose,
+  isFavorite = false,
+  onToggleFavorite,
 }: PriceDetailModalProps) {
   const [interval, setInterval] = useState<HistoryInterval>("24h");
   const [history, setHistory] = useState<{ time: string; price: number }[]>([]);
@@ -175,24 +181,42 @@ export function PriceDetailModal({
             </h2>
             <p className="text-sm text-gray-300">{priceFeed.name}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-sky-200 transition-all duration-300 p-1 rounded-lg hover:bg-sky-500/10"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="flex items-center gap-2">
+            {onToggleFavorite && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onToggleFavorite}
+                className="h-9 px-3 text-xs sm:text-sm hover:bg-amber-300/10"
+              >
+                <Star
+                  className={`h-4 w-4 ${
+                    isFavorite ? "fill-amber-300 text-amber-300" : "text-slate-400"
+                  }`}
+                />
+                {isFavorite ? "Favorited" : "Add to Favorites"}
+              </Button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-sky-200 transition-all duration-300 p-1 rounded-lg hover:bg-sky-500/10"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="p-4 sm:p-6 space-y-6">
