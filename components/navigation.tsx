@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Github } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { PWAInstallButton } from "@/components/pwa-install-button";
 import {
   FAVORITES_UPDATED_EVENT,
   normalizeFavoriteSymbol,
@@ -177,6 +178,11 @@ function Navigation() {
         </div>
 
         <div className="lg:hidden inline-flex items-center gap-1.5">
+          <PWAInstallButton
+            title="Install app"
+            className="inline-flex items-center justify-center rounded-md border border-slate-300/20 bg-slate-900/40 p-1.5"
+            iconClassName="h-4 w-4 text-slate-200"
+          />
           <a
             href="https://github.com/SCPassion/asset-tracking"
             target="_blank"
@@ -205,6 +211,12 @@ function Navigation() {
 
         <div className="hidden lg:flex items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2">
+            <PWAInstallButton
+              label="Install App"
+              title="Install app"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300/20 bg-slate-900/40 px-2.5 py-1 text-[11px] font-medium text-slate-200 hover:text-sky-200 hover:border-sky-300/40 transition-colors duration-150"
+              iconClassName="h-3.5 w-3.5"
+            />
             <a
               href="https://github.com/SCPassion/asset-tracking"
               target="_blank"
