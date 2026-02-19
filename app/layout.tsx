@@ -4,6 +4,7 @@ import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/navigation";
 import { ScrollingFooter } from "@/components/scrolling-footer";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] });
 
@@ -22,8 +23,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${spaceGrotesk.className} min-h-screen overflow-x-hidden flex flex-col antialiased`}>
         <Navigation />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pb-20 lg:pb-0">{children}</main>
         <ScrollingFooter />
+        <MobileBottomNav />
       </body>
     </html>
   );

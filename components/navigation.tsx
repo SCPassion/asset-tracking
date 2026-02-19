@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { CircleHelp, Github, LineChart, Menu, Star, X } from "lucide-react";
+import { Github } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import {
@@ -45,13 +45,12 @@ function formatTickerPrice(value: number): string {
 
 function Navigation() {
   const pathname = usePathname();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [tapeFeeds, setTapeFeeds] = useState<PriceFeed[]>([]);
 
   const links = [
-    { href: "/price-feeds", label: "Price Feeds", icon: LineChart },
-    { href: "/favorites", label: "Favorites", icon: Star },
-    { href: "/about", label: "About", icon: CircleHelp },
+    { href: "/price-feeds", label: "Price Feeds" },
+    { href: "/favorites", label: "Favorites" },
+    { href: "/about", label: "About" },
   ];
   useEffect(() => {
     let canceled = false;
@@ -177,8 +176,35 @@ function Navigation() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden lg:flex items-center gap-2">
+        <div className="lg:hidden inline-flex items-center gap-1.5">
+          <a
+            href="https://github.com/SCPassion/asset-tracking"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Project GitHub Repo"
+            title="Project GitHub Repo"
+            className="inline-flex items-center justify-center rounded-md border border-slate-300/20 bg-slate-900/40 p-1.5"
+          >
+            <Github className="h-4 w-4 text-slate-200" />
+          </a>
+          <a
+            href="https://www.scptech.xyz/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Built by SCPTech"
+            title="Built by SCPTech"
+            className="inline-flex items-center justify-center rounded-md border border-slate-300/20 bg-slate-900/40 p-1.5"
+          >
+            <img
+              src="https://www.scptech.xyz/favicon.ico"
+              alt="SCP Tech icon"
+              className="h-4 w-4 rounded-sm"
+            />
+          </a>
+        </div>
+
+        <div className="hidden lg:flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2">
             <a
               href="https://github.com/SCPassion/asset-tracking"
               target="_blank"
@@ -202,18 +228,6 @@ function Navigation() {
               Built by SCPTech
             </a>
           </div>
-          {/* Mobile menu button */}
-          <button
-            type="button"
-            className="lg:hidden text-white hover:bg-white/10 p-2"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
-          </button>
         </div>
       </div>
 
@@ -237,55 +251,6 @@ function Navigation() {
         </div>
       )}
 
-      {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="lg:hidden border-t border-slate-200/10 glass">
-          <div className="px-3 sm:px-4 py-3">
-            <div className="space-y-1">
-              {links.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={cn(
-                      "flex items-center gap-2 text-sm font-medium transition-colors duration-150 py-2.5 hover:text-sky-200",
-                      pathname === link.href ? "text-sky-200" : "text-slate-200"
-                    )}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {link.label}
-                  </Link>
-                );
-              })}
-              <a
-                href="https://github.com/SCPassion/asset-tracking"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center gap-2 text-sm font-medium text-slate-200 hover:text-sky-200 py-2.5 transition-colors duration-150"
-              >
-                <Github className="h-4 w-4" />
-                Project GitHub Repo
-              </a>
-              <a
-                href="https://www.scptech.xyz/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center gap-2 text-sm font-medium text-slate-200 hover:text-sky-200 py-2.5 transition-colors duration-150"
-              >
-                <img
-                  src="https://www.scptech.xyz/favicon.ico"
-                  alt="SCP Tech icon"
-                  className="h-4 w-4 rounded-sm"
-                />
-                Built by SCPTech
-              </a>
-            </div>
-            <div className="mt-3 border-t border-slate-200/10" />
-          </div>
-        </div>
-      )}
     </nav>
   );
 }
