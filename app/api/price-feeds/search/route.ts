@@ -5,6 +5,8 @@ import { searchPriceFeeds } from "@/lib/pyth-offchain";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+const PAIR_LOOKUP_LIMIT = 8;
+const SEARCH_LIMIT = 12;
 
 function normalizeToken(value: string): string {
   return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
@@ -90,8 +92,8 @@ export async function GET(request: NextRequest) {
       }
 
       const [baseCandidates, denominatorCandidates] = await Promise.all([
-        searchPriceFeeds(`${base}/USD`, 40),
-        searchPriceFeeds(`${denominator}/USD`, 40),
+        searchPriceFeeds(`${base}/USD`, PAIR_LOOKUP_LIMIT),
+        searchPriceFeeds(`${denominator}/USD`, PAIR_LOOKUP_LIMIT),
       ]);
 
       const baseFeed = findUsdFeed(baseCandidates, base);
@@ -115,7 +117,7 @@ export async function GET(request: NextRequest) {
 
     const normalized = normalizeToken(query);
     const usdQuery = normalized ? `${normalized}/USD` : query;
-    const usdFeeds = await searchPriceFeeds(usdQuery, 40);
+    const usdFeeds = await searchPriceFeeds(usdQuery, SEARCH_LIMIT);
     const usdOnly = usdFeeds.filter((feed) => pairFromFeed(feed)?.quote === "USD");
 
     const feeds = usdOnly.length > 0 ? usdOnly : usdFeeds;

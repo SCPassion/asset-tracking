@@ -83,6 +83,7 @@ const cachedFeedIdsByType: Partial<
     { expiresAt: number; bySymbol: Record<string, TrackedFeedReference> }
   >
 > = {};
+const dayAgoPricesCache = new Map<string, { expiresAt: number; byId: Map<string, ParsedPrice> }>();
 
 function normalizeSymbol(value: string): string {
   return value.replace(/\s+/g, "").toUpperCase();
@@ -92,8 +93,15 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchWithRetry<T>(url: string): Promise<T> {
-  const maxAttempts = 5;
+function isStatusError(error: unknown, status: number): boolean {
+  return error instanceof Error && error.message.includes(`(${status})`);
+}
+
+async function fetchWithRetry<T>(
+  url: string,
+  options?: { maxAttempts?: number }
+): Promise<T> {
+  const maxAttempts = options?.maxAttempts ?? 5;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const response = await fetch(url, { cache: "no-store" });
@@ -311,6 +319,16 @@ async function fetchLatestPrices(ids: string[]): Promise<Map<string, ParsedPrice
 }
 
 async function fetchDayAgoPrices(ids: string[], timestamp: number): Promise<Map<string, ParsedPrice>> {
+  if (ids.length === 0) {
+    return new Map();
+  }
+
+  const cacheKey = `${timestamp}:${[...ids].sort().join(",")}`;
+  const cached = dayAgoPricesCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return new Map(cached.byId);
+  }
+
   const params = new URLSearchParams();
   for (const id of ids) {
     params.append("ids[]", id);
@@ -319,12 +337,18 @@ async function fetchDayAgoPrices(ids: string[], timestamp: number): Promise<Map<
 
   const url = `${HERMES_BASE}/v2/updates/price/${timestamp}?${params.toString()}`;
   try {
-    const payload = await fetchWithRetry<{ parsed?: ParsedPrice[] }>(url);
-    return new Map((payload.parsed ?? []).map((item) => [item.id ?? "", item]));
+    const payload = await fetchWithRetry<{ parsed?: ParsedPrice[] }>(url, { maxAttempts: 2 });
+    const byId = new Map((payload.parsed ?? []).map((item) => [item.id ?? "", item]));
+    dayAgoPricesCache.set(cacheKey, {
+      byId,
+      expiresAt: Date.now() + 60_000,
+    });
+    return byId;
   } catch (error) {
-    if (error instanceof Error && error.message.includes("(404)")) {
+    if (isStatusError(error, 404) || isStatusError(error, 429)) {
       // Some feeds or timestamps do not have day-ago snapshots in Hermes.
-      // Treat this as missing historical data instead of surfacing noisy errors.
+      // Rate limits can also happen under bursty search traffic.
+      // Treat both as missing historical data to keep responses fast and quiet.
       return new Map();
     }
     throw error;
@@ -385,7 +409,7 @@ export async function getTrackedPriceFeeds(type: TrackedAssetType = "crypto"): P
 
 export async function searchPriceFeeds(
   query: string,
-  limit = 40
+  limit = 12
 ): Promise<PriceFeed[]> {
   const trimmed = query.trim();
   if (!trimmed) {
@@ -412,7 +436,8 @@ export async function searchPriceFeeds(
   try {
     dayAgoById = await fetchDayAgoPrices(ids, dayAgoTimestamp);
   } catch (error) {
-    console.error("Unable to fetch day-ago prices for search results", error);
+    // Keep search responsive even when historical snapshots are unavailable.
+    // change24h will gracefully fall back to 0 in this case.
   }
 
   return candidates.map((feed) => {

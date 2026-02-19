@@ -43,7 +43,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${spaceGrotesk.className} min-h-screen overflow-x-hidden flex flex-col antialiased`}>
         <Navigation />
-        <main className="flex-1 pb-20 lg:pb-0">{children}</main>
+        <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
         <ScrollingFooter />
         <MobileBottomNav />
         <PWARegister />
