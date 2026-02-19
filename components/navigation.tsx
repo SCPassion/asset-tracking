@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Github, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import {
@@ -139,7 +139,7 @@ function Navigation() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-200/10 glass">
-      <div className="container mx-auto relative flex h-14 sm:h-16 items-center justify-center px-3 sm:px-4">
+      <div className="flex h-14 sm:h-16 w-full items-center justify-between px-3 sm:px-4 lg:px-6">
         <div className="flex items-center gap-4 sm:gap-8">
           <Link
             href="/"
@@ -177,7 +177,31 @@ function Navigation() {
           </div>
         </div>
 
-        <div className="absolute right-3 sm:right-4 flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden lg:flex items-center gap-2">
+            <a
+              href="https://github.com/SCPassion/asset-tracking"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300/20 bg-slate-900/40 px-2.5 py-1 text-[11px] font-medium text-slate-200 hover:text-sky-200 hover:border-sky-300/40 transition-colors duration-150"
+            >
+              <Github className="h-3.5 w-3.5" />
+              Project Repo
+            </a>
+            <a
+              href="https://www.scptech.xyz/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300/20 bg-slate-900/40 px-2.5 py-1 text-[11px] font-medium text-slate-200 hover:text-sky-200 hover:border-sky-300/40 transition-colors duration-150"
+            >
+              <img
+                src="https://www.scptech.xyz/favicon.ico"
+                alt="SCP Tech icon"
+                className="h-3.5 w-3.5 rounded-sm"
+              />
+              Built by SCPTech
+            </a>
+          </div>
           {/* Mobile menu button */}
           <button
             type="button"
@@ -194,20 +218,22 @@ function Navigation() {
       </div>
 
       {tapeFeeds.length > 0 && (
-        <div className="hidden md:flex relative items-center border-t border-b border-slate-300/15 px-3 sm:px-4 h-9 text-xs text-slate-100/90">
-          <div className="flex w-full items-center justify-start gap-4 overflow-x-auto pr-28">
-            {tapeFeeds.map((feed) => (
-              <span key={feed.id} className="whitespace-nowrap font-mono tabular-nums">
-                <span className="font-sans text-slate-50">{feed.symbol.split("/")[0]}</span>{" "}
-                <span className="text-slate-100">${formatTickerPrice(feed.price)}</span>{" "}
-                <span className={feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"}>
-                  {feed.change24h >= 0 ? "+" : "-"}
-                  {Math.abs(feed.change24h).toFixed(1)}%
+        <div className="hidden md:block border-t border-b border-slate-300/15 h-9 text-xs text-slate-100/90">
+          <div className="relative flex h-full w-full items-center px-3 sm:px-4 lg:px-6">
+            <div className="flex w-full items-center justify-start gap-4 overflow-x-auto pr-44">
+              {tapeFeeds.map((feed) => (
+                <span key={feed.id} className="whitespace-nowrap font-mono tabular-nums">
+                  <span className="font-sans text-slate-50">{feed.symbol.split("/")[0]}</span>{" "}
+                  <span className="text-slate-100">${formatTickerPrice(feed.price)}</span>{" "}
+                  <span className={feed.change24h >= 0 ? "text-cyan-300" : "text-red-400"}>
+                    {feed.change24h >= 0 ? "+" : "-"}
+                    {Math.abs(feed.change24h).toFixed(1)}%
+                  </span>
                 </span>
-              </span>
-            ))}
+              ))}
+            </div>
+            <span className="absolute right-3 sm:right-4 text-slate-400">Pyth Network · Hermes v2 Live</span>
           </div>
-          <span className="absolute right-3 sm:right-4 text-slate-400">Pyth Network · Hermes v2 Live</span>
         </div>
       )}
 
@@ -228,6 +254,30 @@ function Navigation() {
                 {link.label}
               </Link>
             ))}
+            <div className="pt-2 space-y-2">
+              <a
+                href="https://github.com/SCPassion/asset-tracking"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center gap-2 text-sm font-medium text-slate-200 hover:text-sky-200 py-2 transition-colors duration-150"
+              >
+                <Github className="h-4 w-4" />
+                Project GitHub Repo
+              </a>
+              <a
+                href="https://www.scptech.xyz/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center gap-2 text-sm font-medium text-slate-200 hover:text-sky-200 py-2 transition-colors duration-150"
+              >
+                <img
+                  src="https://www.scptech.xyz/favicon.ico"
+                  alt="SCP Tech icon"
+                  className="h-4 w-4 rounded-sm"
+                />
+                Built by SCPTech
+              </a>
+            </div>
             <div className="pt-4 border-t border-slate-200/10" />
           </div>
         </div>
