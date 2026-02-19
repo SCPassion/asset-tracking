@@ -207,7 +207,7 @@ function Navigation() {
               </span>
             ))}
           </div>
-          <span className="absolute right-3 sm:right-4 text-slate-400">Hermes v2 Live</span>
+          <span className="absolute right-3 sm:right-4 text-slate-400">Pyth Network · Hermes v2 Live</span>
         </div>
       )}
 
