@@ -142,6 +142,9 @@
       radial-gradient(circle at 70% 74%, rgba(45, 212, 191, 0.1), transparent 34%),
       linear-gradient(155deg, #06080f 0%, #0b1220 56%, #0e1022 100%);
   }
+  html {
+    background-color: #0b1220;
+  }
 }
 
 .glass {

@@ -138,7 +138,7 @@ function Navigation() {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-200/10 glass">
+    <nav className="sticky top-0 z-50 border-b border-slate-200/10 glass pt-[env(safe-area-inset-top)]">
       <div className="relative flex h-14 sm:h-16 w-full items-center justify-between px-3 sm:px-4 lg:px-6">
         <div className="flex items-center gap-4 sm:gap-8">
           <Link

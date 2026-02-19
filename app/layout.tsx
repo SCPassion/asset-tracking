@@ -1,5 +1,5 @@
 import type React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/navigation";
@@ -14,10 +14,9 @@ export const metadata: Metadata = {
   description:
     "Track any asset, anywhere, anytime. Real-time price feeds and market monitoring powered by advanced oracle technology.",
   manifest: "/manifest.webmanifest",
-  themeColor: "#0b1220",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Track Any",
   },
   icons: {
@@ -27,6 +26,12 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b1220",
+  viewportFit: "cover",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
