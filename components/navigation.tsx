@@ -65,9 +65,7 @@ function Navigation() {
         const resolved = await Promise.all(
           symbolsToResolve.map(async (symbol) => {
             const normalizedInput = normalizeFavoriteSymbol(symbol);
-            const query = normalizedInput.includes("/")
-              ? normalizedInput
-              : `${normalizedInput}/USD`;
+            const query = normalizedInput;
             const preferredBase = baseFromPair(normalizedInput);
             const preferredQuote = quoteFromPair(normalizedInput) || "USD";
 

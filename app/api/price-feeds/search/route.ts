@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import type { PriceFeed } from "@/lib/price-feed-types";
-import { searchPriceFeeds } from "@/lib/pyth-offchain";
+import { getTrackedPriceFeeds, searchPriceFeeds } from "@/lib/pyth-offchain";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 const PAIR_LOOKUP_LIMIT = 8;
 const SEARCH_LIMIT = 12;
+const FALLBACK_SEARCH_LIMIT = 24;
 
 function normalizeToken(value: string): string {
   return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
@@ -20,21 +21,100 @@ function pairFromFeed(feed: PriceFeed): { base: string; quote: string } | null {
   return { base: normalizeToken(base), quote: normalizeToken(quote) };
 }
 
-function findUsdFeed(feeds: PriceFeed[], base: string): PriceFeed | null {
-  const normalizedBase = normalizeToken(base);
-  const exact = feeds.find((feed) => {
+function rankFeedForQuery(feed: PriceFeed, normalizedQuery: string): number {
+  const pair = pairFromFeed(feed);
+  if (!pair) return 4;
+
+  if (pair.base === normalizedQuery && pair.quote === "USD") return 0;
+  if (pair.base === normalizedQuery) return 1;
+  if (pair.base.includes(normalizedQuery)) return 2;
+  if ((feed.name ?? "").toUpperCase().includes(normalizedQuery)) return 3;
+  return 4;
+}
+
+function sortFeedsForQuery(feeds: PriceFeed[], query: string): PriceFeed[] {
+  const normalizedQuery = normalizeToken(query);
+  if (!normalizedQuery) return feeds;
+
+  return [...feeds].sort((a, b) => {
+    const rankDelta = rankFeedForQuery(a, normalizedQuery) - rankFeedForQuery(b, normalizedQuery);
+    if (rankDelta !== 0) return rankDelta;
+
+    const aPair = pairFromFeed(a);
+    const bPair = pairFromFeed(b);
+    const aUsd = aPair?.quote === "USD" ? 1 : 0;
+    const bUsd = bPair?.quote === "USD" ? 1 : 0;
+    if (aUsd !== bUsd) return bUsd - aUsd;
+
+    return a.symbol.localeCompare(b.symbol);
+  });
+}
+
+function dedupeFeeds(feeds: PriceFeed[]): PriceFeed[] {
+  const seen = new Set<string>();
+  const unique: PriceFeed[] = [];
+
+  for (const feed of feeds) {
+    const key = `${feed.id}:${feed.symbol}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(feed);
+  }
+
+  return unique;
+}
+
+function hasExactUsdBase(feeds: PriceFeed[], normalizedBase: string): boolean {
+  return feeds.some((feed) => {
     const pair = pairFromFeed(feed);
     return pair?.base === normalizedBase && pair.quote === "USD";
   });
+}
 
-  if (exact) {
-    return exact;
-  }
-
+function findExactUsdFeed(feeds: PriceFeed[], base: string): PriceFeed | null {
+  const normalizedBase = normalizeToken(base);
   return (
     feeds.find((feed) => {
       const pair = pairFromFeed(feed);
-      return pair?.quote === "USD";
+      return pair?.base === normalizedBase && pair.quote === "USD";
+    }) ?? null
+  );
+}
+
+function findCanonicalTrackedUsdFeed(feeds: PriceFeed[], base: string): PriceFeed | null {
+  const normalizedBase = normalizeToken(base);
+  return (
+    feeds.find((feed) => {
+      const pair = pairFromFeed(feed);
+      return pair?.base === normalizedBase && pair.quote === "USD";
+    }) ?? null
+  );
+}
+
+async function resolveUsdFeedForBase(
+  base: string,
+  candidates: PriceFeed[],
+  trackedCryptoFeeds: PriceFeed[]
+): Promise<PriceFeed | null> {
+  const exactFromUsdQuery = findExactUsdFeed(candidates, base);
+  if (exactFromUsdQuery) {
+    return exactFromUsdQuery;
+  }
+
+  const fallbackCandidates = await searchPriceFeeds(base, FALLBACK_SEARCH_LIMIT);
+  const exactFromFallback = findExactUsdFeed(fallbackCandidates, base);
+  if (exactFromFallback) {
+    return exactFromFallback;
+  }
+
+  return findCanonicalTrackedUsdFeed(trackedCryptoFeeds, base);
+}
+
+function findCanonicalForQuery(feeds: PriceFeed[], normalizedQuery: string): PriceFeed | null {
+  return (
+    feeds.find((feed) => {
+      const pair = pairFromFeed(feed);
+      return pair?.base === normalizedQuery && pair.quote === "USD";
     }) ?? null
   );
 }
@@ -91,12 +171,19 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ feeds: [] });
       }
 
-      const [baseCandidates, denominatorCandidates] = await Promise.all([
+      const [baseCandidates, denominatorCandidates, trackedCryptoFeeds] = await Promise.all([
         searchPriceFeeds(`${base}/USD`, PAIR_LOOKUP_LIMIT),
         searchPriceFeeds(`${denominator}/USD`, PAIR_LOOKUP_LIMIT),
+        getTrackedPriceFeeds("crypto").catch(() => []),
       ]);
 
-      const baseFeed = findUsdFeed(baseCandidates, base);
+      const [baseFeed, denominatorFeed] = await Promise.all([
+        resolveUsdFeedForBase(base, baseCandidates, trackedCryptoFeeds),
+        denominator === "USD"
+          ? Promise.resolve(null)
+          : resolveUsdFeedForBase(denominator, denominatorCandidates, trackedCryptoFeeds),
+      ]);
+
       if (!baseFeed) {
         return NextResponse.json({ feeds: [] });
       }
@@ -105,7 +192,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ feeds: [baseFeed] });
       }
 
-      const denominatorFeed = findUsdFeed(denominatorCandidates, denominator);
       if (!denominatorFeed) {
         return NextResponse.json({ feeds: [] });
       }
@@ -116,11 +202,34 @@ export async function GET(request: NextRequest) {
     }
 
     const normalized = normalizeToken(query);
-    const usdQuery = normalized ? `${normalized}/USD` : query;
-    const usdFeeds = await searchPriceFeeds(usdQuery, SEARCH_LIMIT);
-    const usdOnly = usdFeeds.filter((feed) => pairFromFeed(feed)?.quote === "USD");
+    let feeds: PriceFeed[];
+    if (normalized) {
+      const [usdFeeds, fallbackFeeds] = await Promise.all([
+        searchPriceFeeds(`${normalized}/USD`, SEARCH_LIMIT),
+        searchPriceFeeds(normalized, FALLBACK_SEARCH_LIMIT),
+      ]);
 
-    const feeds = usdOnly.length > 0 ? usdOnly : usdFeeds;
+      const merged = dedupeFeeds([...usdFeeds, ...fallbackFeeds]);
+      const usdOnly = merged.filter((feed) => pairFromFeed(feed)?.quote === "USD");
+      feeds = sortFeedsForQuery(usdOnly.length > 0 ? usdOnly : merged, normalized);
+
+      if (!hasExactUsdBase(feeds, normalized)) {
+        try {
+          const trackedCryptoFeeds = await getTrackedPriceFeeds("crypto");
+          const canonical = findCanonicalForQuery(trackedCryptoFeeds, normalized);
+
+          if (canonical) {
+            feeds = sortFeedsForQuery(dedupeFeeds([canonical, ...feeds]), normalized);
+          }
+        } catch {
+          // Ignore fallback failures and return best-effort search results.
+        }
+      }
+    } else {
+      const rawFeeds = await searchPriceFeeds(query, SEARCH_LIMIT);
+      feeds = sortFeedsForQuery(rawFeeds, query);
+    }
+
     return NextResponse.json({ feeds });
   } catch (error) {
     console.error("Failed to search Pyth price feeds", error);
