@@ -1,6 +1,7 @@
 import { PriceFeed } from "@/lib/price-feed-types";
 
 const HERMES_BASE = "https://hermes.pyth.network";
+const BENCHMARKS_BASE = "https://benchmarks.pyth.network";
 const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
 
 export type TrackedAssetType = "crypto" | "equity" | "fx" | "crypto-redemption-rate";
@@ -84,6 +85,7 @@ const cachedFeedIdsByType: Partial<
   >
 > = {};
 const dayAgoPricesCache = new Map<string, { expiresAt: number; byId: Map<string, ParsedPrice> }>();
+const benchmark24hChangeCache = new Map<string, { expiresAt: number; change24h: number | null }>();
 
 function normalizeSymbol(value: string): string {
   return value.replace(/\s+/g, "").toUpperCase();
@@ -355,6 +357,58 @@ async function fetchDayAgoPrices(ids: string[], timestamp: number): Promise<Map<
   }
 }
 
+function normalizeBenchmarksSymbol(symbol: string): string {
+  const trimmed = symbol.trim();
+  if (trimmed.includes(".") && trimmed.includes("/")) {
+    return trimmed;
+  }
+
+  const primary = trimmed.split(" ")[0] ?? trimmed;
+  if (primary.includes("/")) {
+    return `Crypto.${primary.toUpperCase()}`;
+  }
+
+  const normalized = primary.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  return `Crypto.${normalized}/USD`;
+}
+
+async function fetchBenchmarks24hChange(tradingViewSymbol: string): Promise<number | null> {
+  const cacheKey = tradingViewSymbol;
+  const cached = benchmark24hChangeCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.change24h;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const params = new URLSearchParams({
+    symbol: normalizeBenchmarksSymbol(tradingViewSymbol),
+    resolution: "15",
+    from: String(now - 24 * 60 * 60),
+    to: String(now),
+  });
+
+  const url = `${BENCHMARKS_BASE}/v1/shims/tradingview/history?${params.toString()}`;
+  const payload = await fetchWithRetry<{ c?: number[] }>(url, { maxAttempts: 2 });
+  const closes = Array.isArray(payload.c) ? payload.c.filter((value) => typeof value === "number") : [];
+
+  if (closes.length < 2 || closes[0] <= 0) {
+    benchmark24hChangeCache.set(cacheKey, {
+      change24h: null,
+      expiresAt: Date.now() + 60_000,
+    });
+    return null;
+  }
+
+  const start = closes[0];
+  const end = closes[closes.length - 1] ?? start;
+  const change24h = ((end - start) / start) * 100;
+  benchmark24hChangeCache.set(cacheKey, {
+    change24h,
+    expiresAt: Date.now() + 60_000,
+  });
+  return change24h;
+}
+
 export async function getTrackedPriceFeeds(type: TrackedAssetType = "crypto"): Promise<PriceFeed[]> {
   const trackedAssets = TRACKED_ASSETS_BY_TYPE[type] ?? TRACKED_ASSETS_BY_TYPE.crypto;
   const feedIdsBySymbol = await getFeedIdsBySymbol(type, trackedAssets);
@@ -372,6 +426,27 @@ export async function getTrackedPriceFeeds(type: TrackedAssetType = "crypto"): P
     console.error("Unable to fetch 24h historical prices from Hermes", error);
   }
 
+  const benchmarkFallbackEntries = await Promise.all(
+    trackedAssets.map(async (asset) => {
+      const ref = feedIdsBySymbol[asset.symbol];
+      if (!ref) return null;
+
+      const previous = normalizePrice(dayAgoById.get(ref.id)?.price);
+      if (previous.price > 0) return null;
+
+      try {
+        const fallbackChange = await fetchBenchmarks24hChange(ref.tradingViewSymbol);
+        if (fallbackChange === null) return null;
+        return [ref.id, fallbackChange] as const;
+      } catch {
+        return null;
+      }
+    })
+  );
+  const benchmarkChangeById = new Map(
+    benchmarkFallbackEntries.filter(Boolean) as readonly (readonly [string, number])[]
+  );
+
   const feeds: PriceFeed[] = [];
 
   for (const asset of trackedAssets) {
@@ -388,7 +463,7 @@ export async function getTrackedPriceFeeds(type: TrackedAssetType = "crypto"): P
     const change24h =
       previous.price > 0
         ? ((latest.price - previous.price) / previous.price) * 100
-        : 0;
+        : benchmarkChangeById.get(id) ?? 0;
 
     feeds.push({
       id: slugify(asset.symbol),

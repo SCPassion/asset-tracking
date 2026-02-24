@@ -141,6 +141,8 @@ export function PriceDetailModal({
     hasMeaningfulIntervalData && startPrice > 0
       ? ((endPrice - startPrice) / startPrice) * 100
       : 0;
+  const display24hChange =
+    interval === "24h" && hasMeaningfulIntervalData ? rangeChange : priceFeed.change24h;
 
   const axisLabels =
     chartData.length < 2
@@ -243,10 +245,10 @@ export function PriceDetailModal({
               <div className="text-sm text-gray-300 mb-1">24h Change</div>
               <div
                 className={`text-xl sm:text-2xl font-bold font-mono inline-flex items-center gap-1 ${
-                  priceFeed.change24h >= 0 ? "text-cyan-300" : "text-red-400"
+                  display24hChange >= 0 ? "text-cyan-300" : "text-red-400"
                 }`}
               >
-                {priceFeed.change24h >= 0 ? (
+                {display24hChange >= 0 ? (
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -275,7 +277,7 @@ export function PriceDetailModal({
                     />
                   </svg>
                 )}
-                {Math.abs(priceFeed.change24h).toFixed(2)}%
+                {Math.abs(display24hChange).toFixed(2)}%
               </div>
             </div>
             <div className="bg-white/5 rounded-lg p-4 border border-white/10">

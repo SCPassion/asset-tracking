@@ -60,7 +60,13 @@ function useTrackedFeeds(type: TrackedFeedType) {
         setLoading(true);
       }
       try {
-        const response = await fetch(`/api/price-feeds?type=${type}`, { cache: "no-store" });
+        const params = new URLSearchParams({
+          type,
+          t: Date.now().toString(),
+        });
+        const response = await fetch(`/api/price-feeds?${params.toString()}`, {
+          cache: "no-store",
+        });
         if (!response.ok) {
           throw new Error(`Failed with status ${response.status}`);
         }

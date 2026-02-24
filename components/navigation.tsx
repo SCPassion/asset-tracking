@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Github } from "lucide-react";
+import packageJson from "@/package.json";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { PWAInstallButton } from "@/components/pwa-install-button";
@@ -19,6 +20,7 @@ interface PriceFeedApiResponse {
 }
 
 const DEFAULT_TAPE_SYMBOLS = ["BTC", "ETH", "SOL", "PYTH", "FOGO", "JUP"] as const;
+const APP_VERSION = `v${packageJson.version}`;
 
 function normalizeSymbolForMatch(symbol: string): string {
   return symbol.replace(/\s+/g, "").toUpperCase();
@@ -176,6 +178,9 @@ function Navigation() {
         </div>
 
         <div className="lg:hidden inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center rounded-md border border-slate-300/20 bg-slate-900/40 px-1.5 py-1 text-[10px] font-medium text-slate-300">
+            {APP_VERSION}
+          </span>
           <PWAInstallButton
             title="Install app"
             className="inline-flex items-center justify-center rounded-md border border-slate-300/20 bg-slate-900/40 p-1.5"
@@ -209,6 +214,9 @@ function Navigation() {
 
         <div className="hidden lg:flex items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2">
+            <span className="inline-flex items-center rounded-md border border-slate-300/20 bg-slate-900/40 px-2.5 py-1 text-[11px] font-medium text-slate-300">
+              {APP_VERSION}
+            </span>
             <PWAInstallButton
               label="Install App"
               title="Install app"
