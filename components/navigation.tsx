@@ -58,46 +58,91 @@ function Navigation() {
   useEffect(() => {
     let canceled = false;
 
+    const resolveFromTracked = (
+      trackedFeeds: PriceFeed[],
+      symbol: string
+    ): PriceFeed | null => {
+      const preferredBase = baseFromPair(symbol);
+      const preferredQuote = quoteFromPair(symbol) || "USD";
+      const exactPair = trackedFeeds.find(
+        (feed) =>
+          baseFromPair(feed.symbol) === preferredBase &&
+          quoteFromPair(feed.symbol) === preferredQuote
+      );
+      if (exactPair) return exactPair;
+
+      return (
+        trackedFeeds.find(
+          (feed) =>
+            baseFromPair(feed.symbol) === preferredBase &&
+            quoteFromPair(feed.symbol) === "USD"
+        ) ?? null
+      );
+    };
+
+    const resolveFromSearch = async (symbol: string): Promise<PriceFeed | null> => {
+      const normalizedInput = normalizeFavoriteSymbol(symbol);
+      const query = normalizedInput;
+      const preferredBase = baseFromPair(normalizedInput);
+      const preferredQuote = quoteFromPair(normalizedInput) || "USD";
+
+      const response = await fetch(
+        `/api/price-feeds/search?q=${encodeURIComponent(query)}&t=${Date.now()}`,
+        { cache: "no-store" }
+      );
+      if (!response.ok) {
+        return null;
+      }
+
+      const payload = (await response.json()) as PriceFeedApiResponse;
+      const candidates = payload.feeds ?? [];
+      const exactPair = candidates.find(
+        (feed) =>
+          baseFromPair(feed.symbol) === preferredBase &&
+          quoteFromPair(feed.symbol) === preferredQuote
+      );
+      if (exactPair) return exactPair;
+
+      const exactText = candidates.find(
+        (feed) =>
+          normalizeSymbolForMatch(feed.symbol) === normalizeSymbolForMatch(query)
+      );
+      if (exactText) return exactText;
+
+      const usdFallback = candidates.find((feed) => quoteFromPair(feed.symbol) === "USD");
+      return usdFallback ?? candidates[0] ?? null;
+    };
+
     const loadTape = async () => {
       try {
+        const trackedResponse = await fetch(`/api/price-feeds?type=crypto&t=${Date.now()}`, {
+          cache: "no-store",
+        });
+        const trackedPayload = trackedResponse.ok
+          ? ((await trackedResponse.json()) as PriceFeedApiResponse)
+          : { feeds: [] };
+        const trackedFeeds = trackedPayload.feeds ?? [];
+
         const favoriteSymbols = [...readFavoritesFromStorage()].slice(0, 8);
         const symbolsToResolve =
           favoriteSymbols.length > 0 ? favoriteSymbols : [...DEFAULT_TAPE_SYMBOLS];
-
-        const resolved = await Promise.all(
-          symbolsToResolve.map(async (symbol) => {
-            const normalizedInput = normalizeFavoriteSymbol(symbol);
-            const query = normalizedInput;
-            const preferredBase = baseFromPair(normalizedInput);
-            const preferredQuote = quoteFromPair(normalizedInput) || "USD";
-
-            const response = await fetch(
-              `/api/price-feeds/search?q=${encodeURIComponent(query)}`,
-              { cache: "no-store" }
-            );
-            if (!response.ok) {
-              return null;
-            }
-
-            const payload = (await response.json()) as PriceFeedApiResponse;
-            const candidates = payload.feeds ?? [];
-            const exactPair = candidates.find(
-              (feed) =>
-                baseFromPair(feed.symbol) === preferredBase &&
-                quoteFromPair(feed.symbol) === preferredQuote
-            );
-            if (exactPair) return exactPair;
-
-            const exactText = candidates.find(
-              (feed) =>
-                normalizeSymbolForMatch(feed.symbol) === normalizeSymbolForMatch(query)
-            );
-            if (exactText) return exactText;
-
-            const usdFallback = candidates.find((feed) => quoteFromPair(feed.symbol) === "USD");
-            return usdFallback ?? candidates[0] ?? null;
-          })
+        const trackedResolved = symbolsToResolve
+          .map((symbol) => resolveFromTracked(trackedFeeds, symbol))
+          .filter((feed): feed is PriceFeed => feed !== null);
+        const resolvedBaseSymbols = new Set(
+          trackedResolved.map((feed) => baseFromPair(feed.symbol))
         );
+        const unresolvedSymbols = symbolsToResolve.filter((symbol) => {
+          const base = baseFromPair(normalizeFavoriteSymbol(symbol));
+          return !resolvedBaseSymbols.has(base);
+        });
+        const searchFallbackResults = await Promise.allSettled(
+          unresolvedSymbols.map((symbol) => resolveFromSearch(symbol))
+        );
+        const searchResolved = searchFallbackResults
+          .map((result) => (result.status === "fulfilled" ? result.value : null))
+          .filter((feed): feed is PriceFeed => feed !== null);
+        const resolved = [...trackedResolved, ...searchResolved];
 
         if (!canceled) {
           const deduped = new Map<string, PriceFeed>();
@@ -117,7 +162,7 @@ function Navigation() {
     };
 
     loadTape();
-    const interval = setInterval(loadTape, 15_000);
+    const interval = setInterval(loadTape, 5_000);
     const handleFavoritesUpdated = () => {
       void loadTape();
     };
