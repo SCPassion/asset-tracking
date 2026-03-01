@@ -13,22 +13,22 @@ const tabs = [
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const activeIndex = Math.max(
-    0,
-    tabs.findIndex((tab) => tab.href === pathname)
-  );
+  const activeIndex = tabs.findIndex((tab) => tab.href === pathname);
+  const hasActiveTab = activeIndex >= 0;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/10 bg-[#050b16]/95 backdrop-blur-xl lg:hidden pb-[env(safe-area-inset-bottom)]">
       <div className="relative grid h-20 grid-cols-3 px-2 pt-1.5">
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute bottom-1.5 top-1.5 left-2 rounded-xl border border-white/12 bg-white/6 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_4px_10px_rgba(0,0,0,0.2)] transition-transform duration-300 ease-out"
-          style={{
-            width: "calc((100% - 1rem) / 3)",
-            transform: `translateX(${activeIndex * 100}%)`,
-          }}
-        />
+        {hasActiveTab ? (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-1.5 top-1.5 left-2 rounded-xl border border-white/12 bg-white/6 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_4px_10px_rgba(0,0,0,0.2)] transition-transform duration-300 ease-out"
+            style={{
+              width: "calc((100% - 1rem) / 3)",
+              transform: `translateX(${activeIndex * 100}%)`,
+            }}
+          />
+        ) : null}
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = pathname === tab.href;

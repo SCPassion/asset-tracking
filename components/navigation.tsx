@@ -184,21 +184,20 @@ function Navigation() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-200/10 glass pt-[env(safe-area-inset-top)]">
-      <div className="relative flex h-14 sm:h-16 w-full items-center justify-between px-3 sm:px-4 lg:px-6">
-        <div className="flex items-center gap-4 sm:gap-8">
+      <div className="relative flex h-14 sm:h-16 w-full items-center justify-between gap-2 px-3 sm:px-4 lg:px-6">
+        <div className="flex min-w-0 items-center gap-4 sm:gap-8">
           <Link
             href="/"
-            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 text-lg font-bold tracking-tight bg-gradient-to-r from-sky-300 via-cyan-200 to-amber-200 bg-clip-text text-transparent transition-all duration-300 sm:gap-3 sm:text-xl lg:static lg:translate-x-0 lg:text-2xl"
+            className="relative z-10 flex min-w-0 items-center gap-1.5 bg-gradient-to-r from-sky-300 via-cyan-200 to-amber-200 bg-clip-text text-base font-bold tracking-tight text-transparent transition-all duration-300 sm:gap-2 sm:text-lg md:absolute md:left-1/2 md:-translate-x-1/2 lg:static lg:translate-x-0 lg:gap-3 lg:text-2xl"
           >
             <Image
               src="/TrackAny.png"
               alt="Track Any Logo"
               width={24}
               height={24}
-              className="rounded-lg sm:w-8 sm:h-8 ring-2 ring-sky-300/25 transition-all"
+              className="h-6 w-6 shrink-0 rounded-lg ring-2 ring-sky-300/25 transition-all sm:h-7 sm:w-7 lg:h-8 lg:w-8"
             />
-            <span className="hidden xs:inline">Track Any</span>
-            <span className="xs:hidden">Track Any</span>
+            <span className="truncate">Track Any</span>
           </Link>
 
           <div className="hidden items-center gap-4 sm:gap-6 lg:flex">
@@ -222,8 +221,8 @@ function Navigation() {
           </div>
         </div>
 
-        <div className="lg:hidden inline-flex items-center gap-1.5">
-          <span className="inline-flex items-center rounded-md border border-slate-300/20 bg-slate-900/40 px-1.5 py-1 text-[10px] font-medium text-slate-300">
+        <div className="inline-flex shrink-0 items-center gap-1 lg:hidden">
+          <span className="inline-flex items-center rounded-md border border-slate-300/20 bg-slate-900/40 px-1.5 py-1 text-[9px] font-medium text-slate-300 sm:text-[10px]">
             {APP_VERSION}
           </span>
           <PWAInstallButton
