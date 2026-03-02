@@ -1,6 +1,7 @@
 import type React from "react";
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { Navigation } from "@/components/navigation";
 import { ScrollingFooter } from "@/components/scrolling-footer";
@@ -47,6 +48,7 @@ export default function RootLayout({
         <ScrollingFooter />
         <MobileBottomNav />
         <PWARegister />
+        <Analytics />
       </body>
     </html>
   );
